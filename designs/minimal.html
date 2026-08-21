@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Technical Maintenance</title>
+<title>Teknik Çalışma</title>
 <style>
   :root { color-scheme: light dark;
     --bg:#f5f6f8; --fg:#191b1f; --card:#ffffff; --muted:#6b7280;
@@ -16,6 +16,11 @@
   body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     background:var(--bg); color:var(--fg); min-height:100vh;
     display:flex; align-items:center; justify-content:center; padding:24px; }
+  .lang { position:fixed; top:18px; right:20px; display:flex; gap:4px;
+    background:var(--card); border-radius:999px; padding:4px; box-shadow:var(--shadow); }
+  .lang button { border:0; background:transparent; color:var(--muted); font:600 12px/1 inherit;
+    padding:6px 12px; border-radius:999px; cursor:pointer; }
+  .lang button.on { background:var(--accent); color:#fff; }
   .card { background:var(--card); border-radius:20px; padding:52px 44px;
     max-width:480px; width:100%; text-align:center; box-shadow:var(--shadow); }
   .status { display:inline-flex; align-items:center; gap:8px; font:600 12px/1 inherit;
@@ -35,21 +40,34 @@
 </style>
 </head>
 <body>
+  <div class="lang"><button id="btr">TR</button><button id="ben">EN</button></div>
   <main class="card">
-    <span class="status"><span class="dot"></span><span id="status"></span></span>
-    <h1 id="title"></h1>
-    <p id="body"></p>
+    <span class="status"><span class="dot"></span><span data-i="status"></span></span>
+    <h1 data-i="title"></h1>
+    <p data-i="body"></p>
     <div class="bar"></div>
-    <div class="foot" id="foot"></div>
+    <div class="foot" data-i="foot"></div>
   </main>
 <script>
-  var STR = { status:"Maintenance", title:"Brief technical maintenance",
-    body:"Our server is temporarily unreachable. Things are usually back to normal within a few minutes — this page will refresh automatically.",
-    foot:"This page retries automatically every 30 seconds." };
-  document.getElementById("status").textContent = STR.status;
-  document.getElementById("title").textContent = STR.title;
-  document.getElementById("body").textContent = STR.body;
-  document.getElementById("foot").textContent = STR.foot;
+  var T = {
+    tr: { status:"Bakım Modu", title:"Kısa süreli teknik çalışma",
+      body:"Sunucumuz şu anda geçici olarak erişilemiyor. Genellikle birkaç dakika içinde her şey normale döner — bu sayfa kendini otomatik yenileyecek.",
+      foot:"Sayfa 30 saniyede bir otomatik denenir." },
+    en: { status:"Maintenance", title:"Brief technical maintenance",
+      body:"Our server is temporarily unreachable. Things are usually back to normal within a few minutes — this page will refresh automatically.",
+      foot:"This page retries automatically every 30 seconds." }
+  };
+  function setLang(l){
+    document.documentElement.lang = l;
+    document.querySelectorAll("[data-i]").forEach(function(e){ e.textContent = T[l][e.dataset.i]; });
+    document.getElementById("btr").className = l==="tr" ? "on" : "";
+    document.getElementById("ben").className = l==="en" ? "on" : "";
+    try { localStorage.setItem("mlang", l); } catch(e){}
+  }
+  var saved = null; try { saved = localStorage.getItem("mlang"); } catch(e){}
+  setLang(saved || ((navigator.language||"tr").toLowerCase().startsWith("tr") ? "tr" : "en"));
+  document.getElementById("btr").onclick = function(){ setLang("tr"); };
+  document.getElementById("ben").onclick = function(){ setLang("en"); };
   setTimeout(function(){ location.reload(); }, 30000);
 </script>
 </body>

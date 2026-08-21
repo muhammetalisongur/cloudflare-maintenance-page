@@ -1,16 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Reweaving the System</title>
+<title>Sistem Yeniden Örülüyor</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { height:100%; }
   body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; overflow:hidden;
     background:#020604; color:#d8ffe9; display:flex; align-items:center; justify-content:center; }
   #rain { position:fixed; inset:0; }
+  .lang { position:fixed; top:16px; right:18px; display:flex; gap:4px; z-index:9;
+    background:rgba(0,40,20,.5); border-radius:999px; padding:4px; }
+  .lang button { border:0; background:transparent; color:#4ade80; font:600 12px/1 inherit;
+    padding:6px 12px; border-radius:999px; cursor:pointer; }
+  .lang button.on { background:#22c55e; color:#02130a; }
   .card { position:relative; z-index:5; text-align:center; max-width:480px; width:calc(100% - 44px);
     background:rgba(1,14,7,.78); border:1px solid rgba(74,222,128,.28);
     border-radius:18px; padding:42px 38px 36px; backdrop-filter:blur(6px);
@@ -36,21 +41,36 @@
 </head>
 <body>
   <canvas id="rain"></canvas>
+  <div class="lang"><button id="btr">TR</button><button id="ben">EN</button></div>
   <main class="card">
     <span class="glitch" id="gt" data-t=""></span>
-    <p id="body"></p>
+    <p data-i="body"></p>
     <div class="type"><span id="ty"></span><span class="cursor"></span></div>
-    <div class="foot"><span id="foot"></span> <b id="s">30</b>s</div>
+    <div class="foot"><span data-i="foot"></span> <b id="s">30</b>s</div>
   </main>
 <script>
-  var STR = { title:"REWEAVING THE SYSTEM",
-    body:"This corner of reality is briefly offline. Once the code rain settles, everything continues right where it left off.",
-    lines:["> compiling core modules...","> scanning connection matrix...","> awaiting tunnel handshake...","> reweave 87%..."],
-    foot:"Retrying in:" };
-  document.getElementById("body").textContent = STR.body;
-  document.getElementById("foot").textContent = STR.foot;
-  var g=document.getElementById("gt"); g.textContent=STR.title; g.setAttribute("data-t",STR.title);
-  // matrix rain
+  var T = {
+    tr:{ title:"SİSTEM YENİDEN ÖRÜLÜYOR",
+      body:"Gerçekliğin bu köşesi kısa süreliğine çevrimdışı. Kod yağmuru dinince her şey kaldığı yerden devam edecek.",
+      lines:["> cekirdek moduller derleniyor...","> baglanti matrisi taraniyor...","> tunel el sikismasi bekleniyor...","> yeniden orme %87..."],
+      foot:"Yeniden deneme:" },
+    en:{ title:"REWEAVING THE SYSTEM",
+      body:"This corner of reality is briefly offline. Once the code rain settles, everything continues right where it left off.",
+      lines:["> compiling core modules...","> scanning connection matrix...","> awaiting tunnel handshake...","> reweave 87%..."],
+      foot:"Retrying in:" }
+  };
+  var lang="tr";
+  function setLang(l){ lang=l; document.documentElement.lang=l;
+    document.querySelectorAll("[data-i]").forEach(function(e){ e.textContent=T[l][e.dataset.i]; });
+    var g=document.getElementById("gt"); g.textContent=T[l].title; g.setAttribute("data-t",T[l].title);
+    document.getElementById("btr").className=l==="tr"?"on":"";
+    document.getElementById("ben").className=l==="en"?"on":"";
+    try{ localStorage.setItem("mlang",l); }catch(e){} }
+  var sv=null; try{ sv=localStorage.getItem("mlang"); }catch(e){}
+  setLang(sv || ((navigator.language||"tr").toLowerCase().startsWith("tr")?"tr":"en"));
+  document.getElementById("btr").onclick=function(){setLang("tr")};
+  document.getElementById("ben").onclick=function(){setLang("en")};
+  // kod yagmuru
   var cv=document.getElementById("rain"), cx=cv.getContext("2d");
   var W,H,cols,drops,FS=16, CH="ｱｲｳｴｵｶｷｸｹｺ01<>/=+#$アカサタナ";
   function size(){ W=cv.width=innerWidth; H=cv.height=innerHeight;
@@ -67,13 +87,13 @@
       d.y+=d.sp;
       if(d.y*FS>H && Math.random()>0.975){ d.y=Math.random()*-12; d.sp=0.5+Math.random()*0.9; } }
   },50);
-  // typing console line
+  // yazan konsol satiri
   var ti=0, ci=0, ty=document.getElementById("ty");
   setInterval(function(){
-    var line=STR.lines[ti%STR.lines.length];
+    var line=T[lang].lines[ti%T[lang].lines.length];
     ci++; ty.textContent=line.slice(0,ci);
     if(ci>line.length+14){ ci=0; ti++; } },55);
-  // countdown
+  // geri sayim
   var s=30;
   setInterval(function(){ s--; if(s<=0)location.reload();
     document.getElementById("s").textContent=s; },1000);

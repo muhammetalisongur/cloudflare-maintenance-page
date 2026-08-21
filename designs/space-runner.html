@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Under Maintenance</title>
+<title>Bakımdayız</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -15,6 +15,11 @@
   .stars i { position:absolute; width:2px; height:2px; border-radius:50%;
     background:#8ea2ff; opacity:.35; animation:tw 3.2s ease-in-out infinite; }
   @keyframes tw { 50% { opacity:.9; transform:scale(1.6);} }
+  .lang { position:fixed; top:18px; right:20px; display:flex; gap:4px; z-index:5;
+    background:rgba(255,255,255,.07); border-radius:999px; padding:4px; backdrop-filter:blur(6px); }
+  .lang button { border:0; background:transparent; color:#9aa6c2; font:600 12px/1 inherit;
+    padding:6px 12px; border-radius:999px; cursor:pointer; }
+  .lang button.on { background:#5b7cfa; color:#fff; }
   .wrap { text-align:center; max-width:560px; width:100%; position:relative; z-index:2; }
   svg.scene { width:min(300px,70vw); height:auto; margin-bottom:6px; }
   .led { animation:led 1.1s steps(2) infinite; }
@@ -37,6 +42,7 @@
 </head>
 <body>
   <div class="stars" id="stars"></div>
+  <div class="lang"><button id="btr">TR</button><button id="ben">EN</button></div>
   <main class="wrap">
     <svg class="scene" viewBox="0 0 360 150" fill="none" aria-hidden="true">
       <rect x="38" y="46" width="86" height="78" rx="9" fill="#1a2136" stroke="#33405f" stroke-width="2"/>
@@ -52,30 +58,40 @@
               fill="#202a49" stroke="#41528a" stroke-width="2.4"/>
       </g>
     </svg>
-    <h1 id="title"></h1>
-    <p id="body"></p>
+    <h1 data-i="title"></h1>
+    <p data-i="body"></p>
     <canvas id="g" width="480" height="150"></canvas>
-    <div class="score"><span id="scoreLabel"></span> <span id="sc">0</span> · <span id="bestLabel"></span> <span id="hs">0</span></div>
-    <div class="hint" id="hint"></div>
-    <button class="online" id="back" onclick="location.reload()"></button>
+    <div class="score"><span data-i="score"></span> <span id="sc">0</span> · <span data-i="best"></span> <span id="hs">0</span></div>
+    <div class="hint" data-i="hint"></div>
+    <button class="online" id="back" onclick="location.reload()" data-i="back"></button>
   </main>
 <script>
-  var STR = { title:"Reconnecting to the server", hint:"Click or press Space to jump",
-    body:"Brief maintenance in progress — back in a few minutes. Meanwhile, dodge the firewalls with your data packet!",
-    score:"Score:", best:"Best:", back:"We are back online — return to site" };
-  document.getElementById("title").textContent = STR.title;
-  document.getElementById("body").textContent = STR.body;
-  document.getElementById("hint").textContent = STR.hint;
-  document.getElementById("scoreLabel").textContent = STR.score;
-  document.getElementById("bestLabel").textContent = STR.best;
-  document.getElementById("back").textContent = STR.back;
+  var T = {
+    tr:{ title:"Sunucuya yeniden bağlanıyoruz", hint:"Zıplamak için tıkla ya da boşluk tuşuna bas",
+      body:"Kısa bir teknik çalışma var — birkaç dakikaya döneriz. Beklerken veri paketini güvenlik duvarlarından kaçır!",
+      score:"Skor:", best:"Rekor:", back:"Tekrar çevrimiçiyiz — siteye dön" },
+    en:{ title:"Reconnecting to the server", hint:"Click or press Space to jump",
+      body:"Brief maintenance in progress — back in a few minutes. Meanwhile, dodge the firewalls with your data packet!",
+      score:"Score:", best:"Best:", back:"We are back online — return to site" }
+  };
+  function setLang(l){
+    document.documentElement.lang=l;
+    document.querySelectorAll("[data-i]").forEach(function(e){ e.textContent=T[l][e.dataset.i]; });
+    document.getElementById("btr").className=l==="tr"?"on":"";
+    document.getElementById("ben").className=l==="en"?"on":"";
+    try{ localStorage.setItem("mlang",l); }catch(e){}
+  }
+  var sv=null; try{ sv=localStorage.getItem("mlang"); }catch(e){}
+  setLang(sv || ((navigator.language||"tr").toLowerCase().startsWith("tr")?"tr":"en"));
+  document.getElementById("btr").onclick=function(){setLang("tr")};
+  document.getElementById("ben").onclick=function(){setLang("en")};
 
   var st=document.getElementById("stars");
   for(var i=0;i<44;i++){ var d=document.createElement("i");
     d.style.left=(Math.random()*100)+"%"; d.style.top=(Math.random()*100)+"%";
     d.style.animationDelay=(Math.random()*3)+"s"; st.appendChild(d); }
 
-  // --- neon runner ---
+  // --- neon kosucu ---
   var cv=document.getElementById("g"), cx=cv.getContext("2d");
   var W=480,H=150,GY=112,PH=26;
   var p={x:52,y:GY,vy:0,w:26,h:PH}, obs=[], trail=[], t=0, score=0, dead=false;
@@ -88,7 +104,7 @@
   cv.addEventListener("pointerdown",jump);
   function frame(){
     t++; cx.clearRect(0,0,W,H);
-    // neon ground line
+    // neon zemin cizgisi
     var gr=cx.createLinearGradient(0,0,W,0);
     gr.addColorStop(0,"rgba(91,124,250,.05)"); gr.addColorStop(.5,"rgba(91,124,250,.6)"); gr.addColorStop(1,"rgba(91,124,250,.05)");
     cx.fillStyle=gr; cx.fillRect(0,GY+PH+2,W,2);
@@ -107,26 +123,26 @@
             try{ localStorage.setItem("mhs",hs); }catch(e){} } }
       }
     }
-    // firewall obstacles (red neon)
+    // firewall engelleri (kirmizi neon)
     obs.forEach(function(o){
       cx.shadowColor="#ff5d5d"; cx.shadowBlur=10; cx.fillStyle="#e0483f";
       cx.fillRect(o.x, GY+PH-o.h, o.w, o.h); cx.shadowBlur=0;
       cx.fillStyle="rgba(255,255,255,.25)";
       for(var y=GY+PH-o.h+3; y<GY+PH-3; y+=6) cx.fillRect(o.x+2,y,o.w-4,1);
     });
-    // trail
+    // iz (trail)
     trail.forEach(function(tr,i){
       cx.fillStyle="rgba(91,124,250,"+(i/trail.length*0.35)+")";
       cx.fillRect(tr.x-((trail.length-i)*3), tr.y+5, 14, PH-10);
     });
-    // player: a glowing data packet
+    // oyuncu: parlayan veri paketi
     cx.shadowColor="#5b7cfa"; cx.shadowBlur=14; cx.fillStyle="#5b7cfa";
     cx.fillRect(p.x, p.y, p.w, p.h); cx.shadowBlur=0;
     cx.fillStyle="#0a0d14"; cx.fillRect(p.x+16,p.y+7,4,4);
     cx.fillStyle="rgba(255,255,255,.5)"; cx.fillRect(p.x+3,p.y+3,p.w-6,2);
     if(dead){
       cx.fillStyle="#e8ebf2"; cx.font="700 15px system-ui"; cx.textAlign="center";
-      cx.fillText("Click to try again", W/2, 52);
+      cx.fillText(document.documentElement.lang==="tr"?"Tekrar denemek için tıkla":"Click to try again", W/2, 52);
     }
     requestAnimationFrame(frame);
   }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,7 +15,7 @@
     border-radius:26px; padding:38px 44px; overflow:hidden;
     box-shadow:0 0 0 10px #1a1d1a, 0 0 0 13px #0c0e0c, 0 34px 90px rgba(0,0,0,.8),
       inset 0 0 90px rgba(30,255,100,.07); }
-  /* scanlines + flicker */
+  /* tarama cizgileri + titreme */
   .crt::before { content:""; position:absolute; inset:0; pointer-events:none; z-index:3;
     background:repeating-linear-gradient(180deg, rgba(0,0,0,.22) 0 2px, transparent 2px 4px); }
   .crt::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:4;
@@ -31,9 +31,14 @@
   .dim { color:#1d8c3f; }
   .cursor::after { content:"█"; animation:cb .8s steps(1) infinite; }
   @keyframes cb { 50% { opacity:0; } }
+  .lang { position:fixed; top:16px; right:18px; display:flex; gap:6px; z-index:9; }
+  .lang button { border:1px solid #1d8c3f; background:transparent; color:#33ff66;
+    font:700 12px/1 inherit; padding:6px 12px; cursor:pointer; }
+  .lang button.on { background:#33ff66; color:#050805; }
 </style>
 </head>
 <body>
+  <div class="lang"><button id="btr">TR</button><button id="ben">EN</button></div>
   <div class="crt">
     <div class="sweep"></div>
     <pre id="out"></pre><span class="cursor" style="position:relative;z-index:1"></span>
@@ -45,28 +50,44 @@
 " | |\\/| | / _ \\ \\___ \\  \\___ \\|  _| | |_) | \\ \\ / / \n"+
 " | |  | |/ ___ \\ ___) |  ___) | |___|  _ <   \\ V /  \n"+
 " |_|  |_/_/   \\_\\____/  |____/|_____|_| \\_\\   \\_/   \n";
-  var LINES = [
-    [LOGO,0],
-    ["BOOT-BIOS v2.4 ... OK",300],
-    ["memory test ......... 64K OK",250],
-    ["disk check .......... OK",250],
-    ["network unit ........ <span class='amber'>NO RESPONSE</span>",500],
-    ["",100],
-    ["<span class='amber'>!! SYSTEM UNDER BRIEF MAINTENANCE !!</span>",400],
-    ["",100],
-    ["The server will be back within minutes.",200],
-    ["This screen retries automatically until we reconnect.",200],
-    ["",200],
-    ["retrying in: <span id='cnt'>30</span> s",100]
-  ];
-  var out=document.getElementById("out");
-  function boot(){
-    out.innerHTML="";
+  var T = {
+    tr: [
+      [LOGO,0],
+      ["MAS-BIOS v2.4 ... TAMAM",300],
+      ["bellek testi ........ 64K TAMAM",250],
+      ["disk denetimi ....... TAMAM",250],
+      ["ag birimi ........... <span class='amber'>YANIT YOK</span>",500],
+      ["",100],
+      ["<span class='amber'>!! SISTEM KISA SURELI BAKIMDA !!</span>",400],
+      ["",100],
+      ["Sunucu birkac dakika icinde geri donecek.",200],
+      ["Bu ekran baglanti kurulana kadar otomatik yenilenir.",200],
+      ["",200],
+      ["yeniden deneme: <span id='cnt'>30</span> sn",100]
+    ],
+    en: [
+      [LOGO,0],
+      ["MAS-BIOS v2.4 ... OK",300],
+      ["memory test ......... 64K OK",250],
+      ["disk check .......... OK",250],
+      ["network unit ........ <span class='amber'>NO RESPONSE</span>",500],
+      ["",100],
+      ["<span class='amber'>!! SYSTEM UNDER BRIEF MAINTENANCE !!</span>",400],
+      ["",100],
+      ["The server will be back within minutes.",200],
+      ["This screen retries automatically until we reconnect.",200],
+      ["",200],
+      ["retrying in: <span id='cnt'>30</span> s",100]
+    ]
+  };
+  var lang="tr", out=document.getElementById("out"), timer=null;
+  function boot(l){
+    lang=l; out.innerHTML=""; if(timer)clearTimeout(timer);
     var i=0;
     function step(){
-      if(i>=LINES.length){ startCount(); return; }
-      out.innerHTML += LINES[i][0] + "\n";
-      setTimeout(step, LINES[i][1]); i++;
+      if(i>=T[l].length){ startCount(); return; }
+      out.innerHTML += T[l][i][0] + "\n";
+      timer=setTimeout(step, T[l][i][1]); i++;
     }
     step();
   }
@@ -79,7 +100,17 @@
       if(s<=0){ location.reload(); }
     },1000);
   }
-  boot();
+  function setLang(l){
+    document.documentElement.lang=l;
+    document.getElementById("btr").className=l==="tr"?"on":"";
+    document.getElementById("ben").className=l==="en"?"on":"";
+    try{ localStorage.setItem("mlang",l); }catch(e){}
+    boot(l);
+  }
+  var sv=null; try{ sv=localStorage.getItem("mlang"); }catch(e){}
+  setLang(sv || ((navigator.language||"tr").toLowerCase().startsWith("tr")?"tr":"en"));
+  document.getElementById("btr").onclick=function(){setLang("tr")};
+  document.getElementById("ben").onclick=function(){setLang("en")};
 </script>
 </body>
 </html>

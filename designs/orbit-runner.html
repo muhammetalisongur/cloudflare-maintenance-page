@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Orbit — Under Maintenance</title>
+<title>Yörünge — Bakımdayız</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { height:100%; }
@@ -17,6 +17,11 @@
   .a1 { width:44vw; height:44vw; left:-8vw; top:-10vw; background:#20337a; animation:dr 16s ease-in-out infinite alternate; }
   .a2 { width:36vw; height:36vw; right:-6vw; bottom:-8vw; background:#123a3a; animation:dr 19s ease-in-out infinite alternate-reverse; }
   @keyframes dr { to { transform:translate(6vw,4vw) scale(1.15); } }
+  .lang { position:fixed; top:16px; right:18px; display:flex; gap:4px; z-index:9;
+    background:rgba(255,255,255,.06); border-radius:999px; padding:4px; backdrop-filter:blur(8px); }
+  .lang button { border:0; background:transparent; color:#93a0be; font:600 12px/1 inherit;
+    padding:6px 12px; border-radius:999px; cursor:pointer; }
+  .lang button.on { background:#5b7cfa; color:#fff; }
   .card { position:relative; z-index:5; text-align:center; max-width:560px; width:calc(100% - 40px);
     background:rgba(15,19,32,.6); border:1px solid rgba(139,160,255,.14);
     border-radius:24px; padding:30px 34px 26px; backdrop-filter:blur(14px);
@@ -63,6 +68,7 @@
 <body>
   <canvas id="space"></canvas>
   <div class="aurora"><b class="a1"></b><b class="a2"></b></div>
+  <div class="lang"><button id="btr">TR</button><button id="ben">EN</button></div>
 
   <main class="card">
     <div class="top">
@@ -74,40 +80,52 @@
           <circle class="ringbg" cx="43" cy="43" r="39" stroke-width="6"/>
           <circle class="ringfg" id="ring" cx="43" cy="43" r="39" stroke-width="6"/>
         </svg>
-        <div class="ringnum"><b id="sec">30</b><span id="retry"></span></div>
+        <div class="ringnum"><b id="sec">30</b><span data-i="retry"></span></div>
       </div>
       <div>
-        <h1 id="ttl" data-t=""></h1>
-        <p id="body"></p>
+        <h1 data-i="title" id="ttl" data-t=""></h1>
+        <p data-i="body"></p>
       </div>
     </div>
 
     <canvas class="game" id="g" width="480" height="140"></canvas>
     <div class="meta">
-      <div class="score"><span id="scoreLabel"></span> <span id="sc">0</span> · <span id="bestLabel"></span> <span id="hs">0</span></div>
-      <div class="hint" id="hint"></div>
+      <div class="score"><span data-i="score"></span> <span id="sc">0</span> · <span data-i="best"></span> <span id="hs">0</span></div>
+      <div class="hint" data-i="hint"></div>
     </div>
 
     <div class="console"><span id="lines"></span><span class="cursor"></span></div>
-    <button class="online" id="back" onclick="location.reload()"></button>
+    <button class="online" id="back" onclick="location.reload()" data-i="back"></button>
   </main>
 
 <script>
-  var STR = { retry:"check", title:"Satellite in orbit — awaiting signal",
-    body:"Brief maintenance in progress. A green button will appear once we reconnect — meanwhile, dodge the firewalls!",
-    hint:"Space / tap = jump", score:"Score:", best:"Best:",
-    back:"Signal restored — return to site",
-    logs:["reaching core","scanning tunnel","aligning satellite","awaiting handshake","retrying"] };
-  document.getElementById("retry").textContent = STR.retry;
-  document.getElementById("ttl").textContent = STR.title;
-  document.getElementById("ttl").setAttribute("data-t", STR.title);
-  document.getElementById("body").textContent = STR.body;
-  document.getElementById("hint").textContent = STR.hint;
-  document.getElementById("scoreLabel").textContent = STR.score;
-  document.getElementById("bestLabel").textContent = STR.best;
-  document.getElementById("back").textContent = STR.back;
+  var T = {
+    tr:{ retry:"kontrol", title:"Uydu yörüngede — sinyal bekleniyor",
+      body:"Kısa bir teknik çalışma var. Bağlantı gelince yeşil düğme belirecek — beklerken veri paketini güvenlik duvarlarından kaçır!",
+      hint:"Boşluk / tıkla = zıpla", score:"Skor:", best:"Rekor:",
+      back:"Sinyal geldi — siteye dön",
+      logs:["çekirdeğe ulaşılıyor","tünel taranıyor","uydu hizalanıyor","el sıkışma bekleniyor","yeniden deneniyor"] },
+    en:{ retry:"check", title:"Satellite in orbit — awaiting signal",
+      body:"Brief maintenance in progress. A green button will appear once we reconnect — meanwhile, dodge the firewalls!",
+      hint:"Space / tap = jump", score:"Score:", best:"Best:",
+      back:"Signal restored — return to site",
+      logs:["reaching core","scanning tunnel","aligning satellite","awaiting handshake","retrying"] }
+  };
+  var lang="tr";
+  function setLang(l){ lang=l;
+    document.documentElement.lang=l;
+    document.querySelectorAll("[data-i]").forEach(function(e){ e.textContent=T[l][e.dataset.i]; });
+    document.getElementById("ttl").setAttribute("data-t", T[l].title);
+    document.getElementById("btr").className=l==="tr"?"on":"";
+    document.getElementById("ben").className=l==="en"?"on":"";
+    try{ localStorage.setItem("mlang",l); }catch(e){}
+  }
+  var sv=null; try{ sv=localStorage.getItem("mlang"); }catch(e){}
+  setLang(sv || ((navigator.language||"tr").toLowerCase().startsWith("tr")?"tr":"en"));
+  document.getElementById("btr").onclick=function(){setLang("tr")};
+  document.getElementById("ben").onclick=function(){setLang("en")};
 
-  // --- countdown ring: polls the server at 0, without interrupting the game ---
+  // --- geri sayim halkasi: 0'da sunucuyu yokla, oyunu BOLME ---
   var total=30, s=total, C=245, online=false;
   var ring=document.getElementById("ring"), secEl=document.getElementById("sec");
   ring.style.strokeDashoffset=0;
@@ -125,17 +143,18 @@
     if(!online){ secEl.textContent=s; ring.style.strokeDashoffset=C*(1-s/total); }
   },1000);
 
-  // --- console ---
+  // --- konsol ---
   var lines=document.getElementById("lines"), li=0;
   setInterval(function(){
-    if(online){ lines.innerHTML='<span class="dim">['+new Date().toTimeString().slice(0,8)+']</span> link established ✓'; return; }
-    var msgs=STR.logs;
+    if(online){ lines.innerHTML='<span class="dim">['+new Date().toTimeString().slice(0,8)+']</span> '
+      +(lang==="tr"?"bağlantı kuruldu ✓":"link established ✓"); return; }
+    var msgs=T[lang].logs;
     lines.innerHTML='<span class="dim">['+new Date().toTimeString().slice(0,8)+']</span> '
       + msgs[li%msgs.length] + (Math.random()<0.25?' <span style="color:#f2b83c">…timeout</span>':'…');
     li++;
   },2600);
 
-  // --- space scene ---
+  // --- uzay sahnesi ---
   var cv=document.getElementById("space"), cx=cv.getContext("2d");
   var W,H,stars=[],meteors=[],mx=0,my=0,t=0;
   function size(){ W=cv.width=innerWidth; H=cv.height=innerHeight;
@@ -178,7 +197,7 @@
   }
   scene();
 
-  // --- neon runner ---
+  // --- neon kosucu (4'ten) ---
   var gv=document.getElementById("g"), gx=gv.getContext("2d");
   var GW=480,GH=140,GY=104,PH=26;
   var p={x:52,y:GY,vy:0,w:26,h:PH}, obs=[], trail=[], gt=0, score=0, dead=false;
@@ -221,7 +240,7 @@
     gx.fillStyle="rgba(255,255,255,.5)"; gx.fillRect(p.x+3,p.y+3,p.w-6,2);
     if(dead){
       gx.fillStyle="#e8ebf2"; gx.font="700 14px system-ui"; gx.textAlign="center";
-      gx.fillText("Click to try again", GW/2, 48); }
+      gx.fillText(lang==="tr"?"Tekrar denemek için tıkla":"Click to try again", GW/2, 48); }
     requestAnimationFrame(game);
   }
   game();

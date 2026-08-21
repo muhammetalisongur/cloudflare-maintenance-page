@@ -10,8 +10,10 @@
 //
 // Usage: node test/game-sim.js
 //
-// Run this after touching anything under the "AGENT RUNNER" section of
+// Run this after touching anything under the "AJAN KOSUCUSU" section of
 // the theme file (agent/bullet spawn logic, speeds, hitboxes) BEFORE deploying.
+// (Section markers are Turkish on this branch — the tr branch keeps the
+// original bilingual source, comments included.)
 // It has caught real bugs during development:
 //   - frame-rate-coupled speed (2x on 120Hz phones vs 60Hz monitors)
 //   - a shooter agent stacking with a fast-follower agent (unavoidable death)
@@ -23,8 +25,8 @@ const path = require('path');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'live', 'matrix-runner.html'), 'utf8');
 
-const START_MARK = '// === AGENT RUNNER';
-const END_MARK = '// === TYPING CONSOLE';
+const START_MARK = '// === AJAN KOSUCUSU';
+const END_MARK = '// === yazan konsol';
 const start = html.indexOf(START_MARK);
 const end = html.indexOf(END_MARK);
 if (start < 0 || end < 0) {
@@ -40,10 +42,11 @@ const ctxStub = new Proxy({}, {
   set: () => true,
 });
 const elStub = { textContent: 0, style: {}, setAttribute: noop, getContext: () => ctxStub, addEventListener: noop };
-global.document = { getElementById: () => elStub, querySelectorAll: () => [], documentElement: { lang: 'en' } };
+global.document = { getElementById: () => elStub, querySelectorAll: () => [], documentElement: { lang: 'tr' } };
 global.addEventListener = noop;
 global.requestAnimationFrame = noop; // we drive update() manually, frame by frame
-global.STR = { score: 'SCORE:', best: 'BEST:', dead: 'caught', shot: 'shot' };
+global.T = { tr: { dead: 'caught', shot: 'shot' }, en: { dead: 'caught', shot: 'shot' } };
+global.lang = 'tr';
 global.CH = 'X';
 
 chunk += '\n;globalThis.__sim = { update: () => update(), jump: () => jump(), ' +

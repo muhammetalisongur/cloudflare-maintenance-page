@@ -1,18 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Repair Bay</title>
+<title>Robot Atölyesi</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { height:100%; }
   body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; overflow:hidden;
     background:radial-gradient(900px 600px at 50% 20%, #263042 0%, #171d29 60%, #10141d 100%);
     color:#e9edf5; display:flex; align-items:center; justify-content:center; }
+  .lang { position:fixed; top:16px; right:18px; display:flex; gap:4px; z-index:9;
+    background:rgba(255,255,255,.07); border-radius:999px; padding:4px; }
+  .lang button { border:0; background:transparent; color:#94a3bd; font:600 12px/1 inherit;
+    padding:6px 12px; border-radius:999px; cursor:pointer; }
+  .lang button.on { background:#38bdf8; color:#082032; }
   .wrap { text-align:center; max-width:520px; width:calc(100% - 44px); position:relative; z-index:2; }
-  /* gears */
+  /* disliler */
   .gear { position:fixed; opacity:.14; animation:spin linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
   /* robot */
@@ -29,7 +34,7 @@
   .spark.s2 { animation-delay:.18s; left:203px; } .spark.s3 { animation-delay:.34s; top:154px; }
   @keyframes spark { 0%,42% { opacity:0; transform:translate(0,0) scale(1);}
     50% { opacity:1;} 100% { opacity:0; transform:translate(14px,16px) scale(.2);} }
-  /* speech bubble */
+  /* konusma balonu */
   .bubble { position:absolute; top:-6px; left:50%; transform:translateX(28px);
     background:#fff; color:#1f2937; font:600 12.5px/1.45 inherit; text-align:left;
     border-radius:12px 12px 12px 3px; padding:10px 13px; max-width:190px;
@@ -46,17 +51,18 @@
 </style>
 </head>
 <body>
+  <div class="lang"><button id="btr">TR</button><button id="ben">EN</button></div>
   <main class="wrap">
     <div class="stage">
       <div class="bubble" id="bub"></div>
       <svg class="robot" width="230" height="220" viewBox="0 0 230 220" fill="none">
-        <!-- body -->
+        <!-- govde -->
         <rect x="62" y="92" width="106" height="86" rx="18" fill="#3b4a63" stroke="#55688a" stroke-width="2.5"/>
         <rect x="84" y="112" width="62" height="34" rx="8" fill="#141b28"/>
         <rect x="90" y="120" width="12" height="4" rx="2" fill="#38bdf8"/>
         <rect x="90" y="128" width="22" height="4" rx="2" fill="#22c55e"/>
         <rect x="90" y="136" width="16" height="4" rx="2" fill="#f2b83c"/>
-        <!-- head -->
+        <!-- kafa -->
         <rect x="74" y="30" width="82" height="56" rx="16" fill="#4a5b7a" stroke="#66799c" stroke-width="2.5"/>
         <line x1="115" y1="30" x2="115" y2="16" stroke="#66799c" stroke-width="3"/>
         <circle cx="115" cy="12" r="5" fill="#ff5d7e">
@@ -65,9 +71,9 @@
         <g class="eye"><circle cx="97"  cy="58" r="8" fill="#38bdf8"/></g>
         <g class="eye"><circle cx="133" cy="58" r="8" fill="#38bdf8"/></g>
         <path d="M103 72 Q115 79 127 72" stroke="#9fb4d8" stroke-width="3" stroke-linecap="round" fill="none"/>
-        <!-- left arm -->
+        <!-- sol kol -->
         <path d="M62 108 Q40 118 44 142" stroke="#55688a" stroke-width="10" stroke-linecap="round" fill="none"/>
-        <!-- right arm (animated, holding a wrench) -->
+        <!-- sag kol (animasyonlu, anahtar tutuyor) -->
         <g class="arm">
           <path d="M168 118 Q192 126 196 146" stroke="#55688a" stroke-width="10" stroke-linecap="round" fill="none"/>
           <g transform="translate(196,146) rotate(40)">
@@ -75,28 +81,40 @@
             <circle cx="24" cy="1.5" r="7" fill="none" stroke="#c8d3e8" stroke-width="5"/>
           </g>
         </g>
-        <!-- legs -->
+        <!-- bacaklar -->
         <rect x="84"  y="178" width="16" height="22" rx="7" fill="#3b4a63"/>
         <rect x="130" y="178" width="16" height="22" rx="7" fill="#3b4a63"/>
         <ellipse cx="115" cy="208" rx="52" ry="7" fill="rgba(0,0,0,.35)"/>
       </svg>
       <span class="spark"></span><span class="spark s2"></span><span class="spark s3"></span>
     </div>
-    <h1 id="title"></h1>
-    <p id="body"></p>
+    <h1 data-i="title"></h1>
+    <p data-i="body"></p>
     <div class="prog">
-      <div class="lab"><span id="lab"></span><span id="pct">0%</span></div>
+      <div class="lab"><span data-i="lab"></span><span id="pct">0%</span></div>
       <div class="bar"><i id="fill"></i></div>
     </div>
   </main>
 <script>
-  var STR = { title:"Our robot is on it!", lab:"REPAIR PROGRESS",
-    body:"A tiny screw came loose on the server. Our repair bot is hard at work — everything will be back in place within minutes.",
-    says:["Let me tighten this…","Almost there!","Beep boop… testing","Just a moment, promise!","Cables locked in ✓"] };
-  document.getElementById("title").textContent = STR.title;
-  document.getElementById("body").textContent = STR.body;
-  document.getElementById("lab").textContent = STR.lab;
-  // background gears
+  var T = {
+    tr:{ title:"Robotumuz tamirde!", lab:"ONARIM DURUMU",
+      body:"Sunucuda küçük bir vida gevşedi. Tamir robotumuz işinin başında — birkaç dakikaya her şey yerli yerinde olacak.",
+      says:["Şu vidayı bir sıksam…","Neredeyse bitti!","Bip bop… test ediyorum","Az kaldı, söz!","Kablolar yerine oturdu ✓"] },
+    en:{ title:"Our robot is on it!", lab:"REPAIR PROGRESS",
+      body:"A tiny screw came loose on the server. Our repair bot is hard at work — everything will be back in place within minutes.",
+      says:["Let me tighten this…","Almost there!","Beep boop… testing","Just a moment, promise!","Cables locked in ✓"] }
+  };
+  var lang="tr";
+  function setLang(l){ lang=l; document.documentElement.lang=l;
+    document.querySelectorAll("[data-i]").forEach(function(e){ e.textContent=T[l][e.dataset.i]; });
+    document.getElementById("btr").className=l==="tr"?"on":"";
+    document.getElementById("ben").className=l==="en"?"on":"";
+    try{ localStorage.setItem("mlang",l); }catch(e){} }
+  var sv=null; try{ sv=localStorage.getItem("mlang"); }catch(e){}
+  setLang(sv || ((navigator.language||"tr").toLowerCase().startsWith("tr")?"tr":"en"));
+  document.getElementById("btr").onclick=function(){setLang("tr")};
+  document.getElementById("ben").onclick=function(){setLang("en")};
+  // arka plan dislileri
   function gear(x,y,s,d){ var g=document.createElementNS("http://www.w3.org/2000/svg","svg");
     g.setAttribute("width",s); g.setAttribute("height",s); g.setAttribute("viewBox","0 0 100 100");
     g.classList.add("gear"); g.style.left=x; g.style.top=y; g.style.animationDuration=d+"s";
@@ -104,13 +122,13 @@
     g.innerHTML=teeth+'<circle cx="50" cy="50" r="30" fill="none" stroke="#8fa3c4" stroke-width="10"/>';
     document.body.appendChild(g); }
   gear("6%","12%",120,14); gear("84%","64%",160,20); gear("12%","70%",90,10);
-  // speech bubble
+  // konusma balonu
   var bi=0, bub=document.getElementById("bub");
   function say(){ bub.classList.remove("show");
-    setTimeout(function(){ bub.textContent=STR.says[bi%STR.says.length]; bi++;
+    setTimeout(function(){ bub.textContent=T[lang].says[bi%T[lang].says.length]; bi++;
       bub.classList.add("show"); },420); }
   say(); setInterval(say, 3600);
-  // progress + reload (fills over 30s)
+  // ilerleme + yenileme (30 sn'de dolar)
   var s=0;
   setInterval(function(){ s++;
     var pct=Math.min(100, Math.round(s/30*100));

@@ -1,5 +1,11 @@
 # Cloudflare Maintenance Page
 
+> **`tr` branch** — same project, but every theme keeps its original
+> bilingual Turkish/English content (auto-detects the visitor's browser
+> language, with a manual TR/EN toggle) instead of the English-only text on
+> `main`. Code, structure, and build/test tooling are otherwise identical
+> between the two branches.
+
 A **Cloudflare Worker** that replaces your site's default error page with a
 custom one whenever your origin is unreachable — timeout, tunnel down,
 container crashed, power outage, anything that makes Cloudflare see a
@@ -10,7 +16,7 @@ It ships as **13 self-contained theme files** — from a plain "back soon"
 card to a full Matrix-style scene with an endless-runner mini-game — so
 visitors have something better to look at than a generic error screen while
 you fix things. All plain HTML/CSS/JS, no framework, no build step to
-preview; dark/light and `prefers-reduced-motion` aware; English only.
+preview; dark/light and `prefers-reduced-motion` aware.
 
 ## Structure
 

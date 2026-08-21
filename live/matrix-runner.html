@@ -1,16 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Reweaving the System</title>
+<title>Simülasyon Askıda</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { height:100%; }
   body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; overflow:hidden;
     background:#020604; color:#d8ffe9; display:flex; align-items:center; justify-content:center; }
   #rain { position:fixed; inset:0; }
+  .lang { position:fixed; top:16px; right:18px; display:flex; gap:4px; z-index:9;
+    background:rgba(0,40,20,.55); border-radius:999px; padding:4px; }
+  .lang button { border:0; background:transparent; color:#4ade80; font:600 12px/1 inherit;
+    padding:6px 12px; border-radius:999px; cursor:pointer; }
+  .lang button.on { background:#22c55e; color:#02130a; }
   .card { position:relative; z-index:5; text-align:center; max-width:560px; width:calc(100% - 40px);
     background:rgba(1,14,7,.82); border:1px solid rgba(74,222,128,.28);
     border-radius:18px; padding:30px 32px 26px; backdrop-filter:blur(6px);
@@ -59,68 +64,99 @@
 </head>
 <body>
   <canvas id="rain"></canvas>
+  <div class="lang"><button id="btr">TR</button><button id="ben">EN</button></div>
 
   <main class="card">
     <span class="glitch" id="ttl" data-t=""></span>
     <p id="bodytxt"></p>
     <canvas class="game" id="g" width="490" height="140"></canvas>
     <div class="meta">
-      <span class="score" id="scoreLine"></span>
-      <span class="hint" id="hintLine"></span>
+      <span class="score"><span data-i="score"></span> <span id="sc">0</span> · <span data-i="best"></span> <span id="hs">0</span></span>
+      <span class="hint" data-i="hint"></span>
     </div>
     <div class="type"><span id="ty"></span><span class="cursor"></span></div>
-    <button class="online" id="back" onclick="location.reload()"></button>
-    <div class="foot" id="foot"></div>
+    <button class="online" id="back" onclick="location.reload()" data-i="back"></button>
+    <div class="foot" id="foot"><span data-i="foot"></span> <b id="s">30</b>s</div>
   </main>
 
 <script>
-  var STR = {
-    hint:"SPACE / TAP = JUMP", score:"SCORE:", best:"BEST:",
-    back:"Reality restored — exit the Matrix",
-    dead:"An agent caught you — try again",
-    shot:"An agent shot you — try again",
-    ok:"> link established ✓  exit gate open",
-    foot:"next reality check:",
-    ph:[
-     {t:"REWEAVING THE SYSTEM", b:"This corner of reality is briefly offline. Stay in the simulation while the code reweaves — jump over the agents!",
-      l:["> compiling core modules...","> scanning connection matrix...","> reweave 87%..."]},
-     {t:"REWEAVE IS STALLING", b:"The Weaver is running slower than expected. The machines are getting impatient — no panic, yet.",
-      l:["> awaiting weaver response...","> loop attempt 2...","> machine patience: 64%"]},
-     {t:"AGENT ACTIVITY RISING", b:"An anomaly was detected in the system. Agents are multiplying — do not get caught down there; we cannot unplug you in time.",
-      l:["> tracking anomaly...","> agent count: rising","> stealth protocol active"]},
-     {t:"SENTINEL SWARM INBOUND", b:"The machines sent a Sentinel swarm toward our source block. Our engineers are sprinting to the nearest hardline.",
-      l:["> sentinel radar: 400m...","> charging the EMP...","> locating hardline..."]},
-     {t:"ZION HAS BEEN NOTIFIED", b:"The last human city knows. The crew of the Nebuchadnezzar is on its way — hovering in as we speak.",
-      l:["> zion council assembled","> nebuchadnezzar: en route","> morpheus: 'keep the faith'"]},
-     {t:"CONSULTING THE ORACLE", b:"The Oracle offered a cookie and smiled: 'Do not worry, kid. Every outage ends — the question is being ready when it does.'",
-      l:["> cookies in the kitchen","> the oracle is thinking...","> prophecy: 'soon'"]},
-     {t:"THE ARCHITECT STEPS IN", b:"The Architect is studying the anomaly. This is the sixth version of the simulation — the statistics favor us, ergo we return.",
-      l:["> balancing equations...","> version 6.0 verified","> ergo... vis-a-vis... done"]},
-     {t:"THE RED PILL KICKS IN", b:"Layers of reality are separating. Remember: there is no spoon — therefore there is no outage either. We are fixing it anyway.",
-      l:["> spoon: not found","> aligning layers...","> bending the mind..."]},
-     {t:"THE TRAINMAN AT THE STATION", b:"We are at Mobil Ave. Negotiating with the Trainman — once the train departs, everyone goes home.",
-      l:["> station: mobil ave.","> trainman: negotiating","> fare: one cookie"]},
-     {t:"NEO AT THE TABLE", b:"Neo is speaking with the Machine City. Peace — and reconnection — are closer than ever. Almost there.",
-      l:["> machine city: listening","> peace terms: connectivity","> the sun is about to rise..."]}
-    ]
+  var T = {
+    tr:{ hint:"BOŞLUK / TIKLA = ZIPLA", score:"SKOR:", best:"REKOR:",
+      back:"Gerçeklik geri döndü — Matrix'ten çık",
+      dead:"Ajan seni yakaladı — tekrar dene",
+      shot:"Ajan seni vurdu — tekrar dene",
+      ok:"> baglanti kuruldu ✓  cikis kapisi acik",
+      foot:"sonraki gerçeklik kontrolü:",
+      ph:[
+       {t:"SİSTEM YENİDEN ÖRÜLÜYOR", b:"Gerçekliğin bu köşesi kısa süreliğine çevrimdışı. Kod yeniden örülürken simülasyonda kal — ajanlardan atlayarak kaç!",
+        l:["> cekirdek moduller derleniyor...","> baglanti matrisi taraniyor...","> yeniden orme %87..."]},
+       {t:"KOD YENİDEN ÖRÜLEMİYOR", b:"Örücü beklenenden yavaş çalışıyor. Makineler sabırsızlanmaya başladı — ama panik yok, henüz.",
+        l:["> orucu yaniti bekleniyor...","> dongu 2. deneme...","> makine sabri: %64"]},
+       {t:"AJAN AKTİVİTESİ ARTIYOR", b:"Sistemde anomali tespit edildi. Ajanlar çoğalıyor — aşağıda sakın yakalanma, gerçekte seni kurtaramayız.",
+        l:["> anomali izleniyor...","> ajan sayisi: artiyor","> gizlilik protokolu aktif"]},
+       {t:"SENTINEL SÜRÜSÜ YAKLAŞIYOR", b:"Makineler kaynak bloğuna bir Sentinel sürüsü yolladı. Mühendislerimiz en yakın telefon hattına koşuyor.",
+        l:["> sentinel radari: 400m...","> EMP sarj ediliyor...","> telefon hatti araniyor..."]},
+       {t:"ZION'A HABER VERİLDİ", b:"Son insan şehri durumdan haberdar. Nabukadnezar mürettebatı yola çıktı — süzülerek geliyorlar.",
+        l:["> zion konseyi toplandi","> nabukadnezar: rotada","> morpheus: 'inanci koru'"]},
+       {t:"KAHİN'E DANIŞILIYOR", b:"Kahin kurabiye uzattı ve gülümsedi: 'Merak etme evlat. Her kesinti biter — mesele, bittiğinde hazır olman.'",
+        l:["> mutfakta kurabiye kokusu","> kahin dusunuyor...","> kehanet: 'yakinda'"]},
+       {t:"MİMAR DEVREYE GİRDİ", b:"Mimar anomaliyi inceliyor. Bu, simülasyonun altıncı sürümü — istatistikler bizden yana, ergo döneceğiz.",
+        l:["> denklemler dengeleniyor...","> surum 6.0 dogrulandi","> ergo... vis-a-vis... tamam"]},
+       {t:"KIRMIZI HAP ETKİSİNİ GÖSTERİYOR", b:"Gerçeklik katmanları ayrışıyor. Unutma: kaşık yok — dolayısıyla aslında kesinti de yok. Ama yine de tamir ediyoruz.",
+        l:["> kasik: bulunamadi","> katmanlar hizalaniyor...","> zihin bukuluyor..."]},
+       {t:"TREN ADAM İSTASYONDA", b:"Mobil Ave. istasyonundayız. Tren Adam ile pazarlık sürüyor — tren kalkınca herkes evine dönecek.",
+        l:["> istasyon: mobil ave.","> tren adam: pazarlikta","> bilet: bir kurabiye"]},
+       {t:"NEO MÜZAKERE MASASINDA", b:"Neo, Makine Şehri'yle konuşuyor. Barış — ve yeniden bağlantı — her zamankinden yakın. Az kaldı.",
+        l:["> makine sehri: dinliyor","> baris sartlari: baglanti","> gunes dogmak uzere..."]}
+      ] },
+    en:{ hint:"SPACE / TAP = JUMP", score:"SCORE:", best:"BEST:",
+      back:"Reality restored — exit the Matrix",
+      dead:"An agent caught you — try again",
+      shot:"An agent shot you — try again",
+      ok:"> link established ✓  exit gate open",
+      foot:"next reality check:",
+      ph:[
+       {t:"REWEAVING THE SYSTEM", b:"This corner of reality is briefly offline. Stay in the simulation while the code reweaves — jump over the agents!",
+        l:["> compiling core modules...","> scanning connection matrix...","> reweave 87%..."]},
+       {t:"REWEAVE IS STALLING", b:"The Weaver is running slower than expected. The machines are getting impatient — no panic, yet.",
+        l:["> awaiting weaver response...","> loop attempt 2...","> machine patience: 64%"]},
+       {t:"AGENT ACTIVITY RISING", b:"An anomaly was detected in the system. Agents are multiplying — do not get caught down there; we cannot unplug you in time.",
+        l:["> tracking anomaly...","> agent count: rising","> stealth protocol active"]},
+       {t:"SENTINEL SWARM INBOUND", b:"The machines sent a Sentinel swarm toward our source block. Our engineers are sprinting to the nearest hardline.",
+        l:["> sentinel radar: 400m...","> charging the EMP...","> locating hardline..."]},
+       {t:"ZION HAS BEEN NOTIFIED", b:"The last human city knows. The crew of the Nebuchadnezzar is on its way — hovering in as we speak.",
+        l:["> zion council assembled","> nebuchadnezzar: en route","> morpheus: 'keep the faith'"]},
+       {t:"CONSULTING THE ORACLE", b:"The Oracle offered a cookie and smiled: 'Do not worry, kid. Every outage ends — the question is being ready when it does.'",
+        l:["> cookies in the kitchen","> the oracle is thinking...","> prophecy: 'soon'"]},
+       {t:"THE ARCHITECT STEPS IN", b:"The Architect is studying the anomaly. This is the sixth version of the simulation — the statistics favor us, ergo we return.",
+        l:["> balancing equations...","> version 6.0 verified","> ergo... vis-a-vis... done"]},
+       {t:"THE RED PILL KICKS IN", b:"Layers of reality are separating. Remember: there is no spoon — therefore there is no outage either. We are fixing it anyway.",
+        l:["> spoon: not found","> aligning layers...","> bending the mind..."]},
+       {t:"THE TRAINMAN AT THE STATION", b:"We are at Mobil Ave. Negotiating with the Trainman — once the train departs, everyone goes home.",
+        l:["> station: mobil ave.","> trainman: negotiating","> fare: one cookie"]},
+       {t:"NEO AT THE TABLE", b:"Neo is speaking with the Machine City. Peace — and reconnection — are closer than ever. Almost there.",
+        l:["> machine city: listening","> peace terms: connectivity","> the sun is about to rise..."]}
+      ] }
   };
-  var phase=0;
+  var lang="tr", phase=0;
   function applyPhase(){
-    var P=STR.ph[phase];
+    var P=T[lang].ph[phase];
     var g=document.getElementById("ttl"); g.textContent=P.t; g.setAttribute("data-t",P.t);
     document.getElementById("bodytxt").textContent=P.b;
     ti=0; ci=0;
   }
-  function init(){
-    document.getElementById("scoreLine").textContent = STR.score+" 0 · "+STR.best+" 0";
-    document.getElementById("hintLine").textContent = STR.hint;
-    document.getElementById("back").textContent = STR.back;
-    document.getElementById("foot").innerHTML = STR.foot+' <b id="s">30</b>s';
-    applyPhase();
-  }
-  init();
+  function setLang(l){ lang=l; document.documentElement.lang=l;
+    document.querySelectorAll("[data-i]").forEach(function(e){ e.textContent=T[l][e.dataset.i]; });
+    document.getElementById("btr").className=l==="tr"?"on":"";
+    document.getElementById("ben").className=l==="en"?"on":"";
+    try{ localStorage.setItem("mlang",l); }catch(e){}
+    applyPhase(); }
+  var sv=null; try{ sv=localStorage.getItem("mlang"); }catch(e){}
+  setLang(sv || ((navigator.language||"tr").toLowerCase().startsWith("tr")?"tr":"en"));
+  document.getElementById("btr").onclick=function(){setLang("tr")};
+  document.getElementById("ben").onclick=function(){setLang("en")};
 
-  // === MATRIX RAIN ===
+  // === KOD YAGMURU ===
   var rv=document.getElementById("rain"), rx=rv.getContext("2d");
   var W,H,cols,drops,FS=16, CH="ｱｲｳｴｵｶｷｸｹｺ01<>/=+#$アカサタナ";
   function size(){ W=rv.width=innerWidth; H=rv.height=innerHeight;
@@ -138,34 +174,33 @@
       if(d.y*FS>H && Math.random()>0.975){ d.y=Math.random()*-12; d.sp=0.5+Math.random()*0.9; } }
   },50);
 
-  // === AGENT RUNNER (fixed 60fps timestep — same speed on 120Hz screens too) ===
+  // === AJAN KOSUCUSU (sabit 60fps zaman adimi — 120Hz ekranlarda da ayni hiz) ===
   var gv=document.getElementById("g"), gx=gv.getContext("2d");
   var GW=490,GH=140,GY=100,PH=30;
   var p={x:52,y:GY,vy:0,w:22,h:PH}, obs=[], bullets=[], gt=0, score=0, dead=false, glyph=0, lastShot=-999, deathBy="dead";
   var hs=0; try{ hs=+localStorage.getItem("mxhs")||0; }catch(e){}
-  function scoreText(){ return STR.score+" "+score+" · "+STR.best+" "+hs; }
-  document.getElementById("scoreLine").textContent = scoreText();
-  function saveHs(){ if(score>hs){ hs=score;
+  document.getElementById("hs").textContent=hs;
+  function saveHs(){ if(score>hs){ hs=score; document.getElementById("hs").textContent=hs;
     try{ localStorage.setItem("mxhs",hs); }catch(e){} } }
   function jump(){ if(dead){ obs=[];bullets=[];gt=0;score=0;dead=false;p.y=GY;p.vy=0;lastShot=-999;wantShooter=false;
-      document.getElementById("scoreLine").textContent=scoreText(); return; }
+      document.getElementById("sc").textContent=0; return; }
     if(p.y>=GY-1){ p.vy=-9.8; } }
   addEventListener("keydown",function(e){ if(e.code==="Space"){ e.preventDefault(); jump(); }});
   gv.addEventListener("pointerdown",jump);
   function drawFigure(x,y,h,color,glow,agent,flash){
     gx.shadowColor=glow; gx.shadowBlur=12; gx.strokeStyle=color; gx.fillStyle=color; gx.lineWidth=2.5;
-    var hy=y+6; // head
+    var hy=y+6; // kafa
     gx.beginPath(); gx.arc(x+11,hy,5.5,0,6.284); gx.fill();
-    if(agent){ gx.fillStyle="#111"; gx.fillRect(x+7,hy-2,8,3); } // sunglasses
+    if(agent){ gx.fillStyle="#111"; gx.fillRect(x+7,hy-2,8,3); } // gunes gozlugu
     gx.strokeStyle=color;
     gx.beginPath();
-    gx.moveTo(x+11,hy+5); gx.lineTo(x+11,y+h-9);           // torso
-    gx.moveTo(x+11,hy+9); gx.lineTo(x+3,hy+16);            // arms
+    gx.moveTo(x+11,hy+5); gx.lineTo(x+11,y+h-9);           // govde
+    gx.moveTo(x+11,hy+9); gx.lineTo(x+3,hy+16);            // kollar
     gx.moveTo(x+11,hy+9); gx.lineTo(x+19,hy+15);
-    gx.moveTo(x+11,y+h-9); gx.lineTo(x+4,y+h);             // legs
+    gx.moveTo(x+11,y+h-9); gx.lineTo(x+4,y+h);             // bacaklar
     gx.moveTo(x+11,y+h-9); gx.lineTo(x+18,y+h);
     gx.stroke();
-    if(flash){ // muzzle flash
+    if(flash){ // namlu alevi
       gx.fillStyle="#ffd166"; gx.shadowColor="#ffb347"; gx.shadowBlur=14;
       gx.beginPath(); gx.arc(x-2,hy+13,3.5,0,6.284); gx.fill(); }
     gx.shadowBlur=0;
@@ -175,9 +210,8 @@
     gt++; glyph++;
     if(dead) return;
     p.vy+=0.58; p.y+=p.vy; if(p.y>GY){ p.y=GY; p.vy=0; }
-    var speed=3.3+Math.min(2.4,score/28);   // gentle ramp, low ceiling
-    // shooter duel: once requested, normal spawns pause until the screen is
-    // clear so the shooter always enters alone
+    var speed=3.3+Math.min(2.4,score/28);   // yavas ivme, dusuk tavan
+    // nisanci duellosu: istek geldiginde normal akis durur, ekran bosalinca nisanci tek girer
     var shooterOn=bullets.length>0;
     for(var i=0;i<obs.length;i++){ if(obs[i].shooter){ shooterOn=true; break; } }
     if(!wantShooter && !shooterOn && score>=3 && gt-lastShot>320 && Math.random()<0.012){ wantShooter=true; }
@@ -186,10 +220,10 @@
     } else if(!shooterOn && gt%Math.max(52,96-Math.floor(score/8))===0){ obs.push({x:GW+20,flash:0}); }
     for(var i=obs.length-1;i>=0;i--){
       var o=obs[i]; o.x-=speed*(o.slow?0.45:1); if(o.flash>0)o.flash--;
-      if(o.shooter && !o.armed && o.x<GW-90){ o.armed=true; o.aim=42; } // aims as soon as it enters
+      if(o.shooter && !o.armed && o.x<GW-90){ o.armed=true; o.aim=42; } // girer girmez nisan
       if(o.aim>0){ o.aim--;
         if(o.aim===0){ bullets.push({x:o.x-2,y:GY+19}); o.flash=9; o.slow=false; } }
-      if(o.x<-30){ obs.splice(i,1); score++; document.getElementById("scoreLine").textContent=scoreText(); }
+      if(o.x<-30){ obs.splice(i,1); score++; document.getElementById("sc").textContent=score; }
       if(p.x < o.x+20 && p.x+p.w > o.x+2 && p.y+p.h > GY+2){ dead=true; deathBy="dead"; saveHs(); } }
     for(var i=bullets.length-1;i>=0;i--){
       var b=bullets[i]; b.x-=(speed+2.3);
@@ -201,7 +235,7 @@
     gx.font="11px monospace"; gx.fillStyle="rgba(74,222,128,.35)";
     for(var x=0;x<GW;x+=14){ gx.fillText(CH[(x/14+(glyph>>3))%CH.length|0], x, GY+PH+14); }
     gx.fillStyle="rgba(74,222,128,.5)"; gx.fillRect(0,GY+PH+2,GW,1.5);
-    // bullets (red trail)
+    // mermiler (kirmizi izli)
     bullets.forEach(function(b){
       var g=gx.createLinearGradient(b.x,b.y,b.x+26,b.y);
       g.addColorStop(0,"rgba(255,93,93,.95)"); g.addColorStop(1,"rgba(255,93,93,0)");
@@ -209,14 +243,14 @@
       gx.strokeStyle=g; gx.lineWidth=3; gx.beginPath();
       gx.moveTo(b.x,b.y); gx.lineTo(b.x+26,b.y); gx.stroke(); gx.shadowBlur=0; });
     obs.forEach(function(o){ drawFigure(o.x, GY, PH, "#ff5d5d", "#ff2d2d", true, o.flash>0);
-      if(o.aim>0 && (o.aim%14)<7){ // aiming warning: blinking light on the muzzle
+      if(o.aim>0 && (o.aim%14)<7){ // nisan alma uyarisi: namluda yanip sonen isik
         gx.fillStyle="#ffb347"; gx.shadowColor="#ffb347"; gx.shadowBlur=10;
         gx.beginPath(); gx.arc(o.x-2, GY+19, 2.6, 0, 6.284); gx.fill(); gx.shadowBlur=0; } });
     drawFigure(p.x, p.y, PH, "#4ade80", "#22c55e", false, false);
     if(dead){
       gx.fillStyle="#d8ffe9"; gx.font="700 14px system-ui"; gx.textAlign="center";
       gx.shadowColor="#22c55e"; gx.shadowBlur=10;
-      gx.fillText(STR[deathBy], GW/2, 44); gx.shadowBlur=0; gx.textAlign="left"; }
+      gx.fillText(T[lang][deathBy], GW/2, 44); gx.shadowBlur=0; gx.textAlign="left"; }
   }
   var last=performance.now(), acc=0, STEP=1000/60;
   function loop(now){
@@ -226,15 +260,15 @@
   }
   requestAnimationFrame(loop);
 
-  // === TYPING CONSOLE ===
+  // === yazan konsol ===
   var ti=0, ci=0, ty=document.getElementById("ty"), online=false;
   setInterval(function(){
-    if(online){ ty.textContent=STR.ok; return; }
-    var line=STR.ph[phase].l[ti%STR.ph[phase].l.length];
+    if(online){ ty.textContent=T[lang].ok; return; }
+    var line=T[lang].ph[phase].l[ti%T[lang].ph[phase].l.length];
     ci++; ty.textContent=line.slice(0,ci);
     if(ci>line.length+14){ ci=0; ti++; } },55);
 
-  // === reality check: poll without interrupting the game ===
+  // === gerceklik kontrolu: oyunu bolmeden yokla ===
   var s=30;
   function goOnline(){
     online=true;
@@ -247,9 +281,9 @@
     if(s<=0){ s=30;
       fetch(location.href,{method:"HEAD",cache:"no-store"}).then(function(r){
         if(r.ok){ goOnline(); }
-        else { phase=(phase+1)%STR.ph.length; applyPhase(); }
-      }).catch(function(){ phase=(phase+1)%STR.ph.length; applyPhase(); }); }
-    if(!online){ var el=document.getElementById("s"); if(el) el.textContent=s; }
+        else { phase=(phase+1)%T[lang].ph.length; applyPhase(); }
+      }).catch(function(){ phase=(phase+1)%T[lang].ph.length; applyPhase(); }); }
+    if(!online) document.getElementById("s").textContent=s;
   },1000);
 </script>
 </body>

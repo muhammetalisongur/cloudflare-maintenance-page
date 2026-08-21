@@ -1,29 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Paper Sky</title>
+<title>Kağıttan Gökyüzü</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { height:100%; }
   body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; overflow:hidden;
     background:linear-gradient(180deg,#aee3f7 0%,#d7f0fb 60%,#f6e9d4 100%); color:#334;
     display:flex; align-items:center; justify-content:center; }
-  /* paper clouds */
+  .lang { position:fixed; top:16px; right:18px; display:flex; gap:4px; z-index:9;
+    background:#fff; border-radius:999px; padding:4px; box-shadow:0 6px 18px rgba(50,80,120,.18); }
+  .lang button { border:0; background:transparent; color:#7b8aa0; font:600 12px/1 inherit;
+    padding:6px 12px; border-radius:999px; cursor:pointer; }
+  .lang button.on { background:#ff8f5e; color:#fff; }
+  /* kagit bulutlar */
   .cloud { position:fixed; background:#fff; border-radius:999px;
     box-shadow:0 14px 24px rgba(70,110,160,.18); animation:drift linear infinite; }
   .cloud::before,.cloud::after { content:""; position:absolute; background:#fff; border-radius:50%; }
   .cloud::before { width:55%; height:160%; left:14%; bottom:20%; }
   .cloud::after  { width:38%; height:120%; right:12%; bottom:26%; }
   @keyframes drift { from { transform:translateX(-30vw);} to { transform:translateX(130vw);} }
-  /* sun */
+  /* gunes */
   .sun { position:fixed; top:9%; left:11%; width:88px; height:88px; border-radius:50%;
     background:#ffd166; box-shadow:0 10px 22px rgba(230,160,40,.35); }
   .sun i { position:absolute; left:50%; top:50%; width:5px; height:22px; background:#ffd166;
     border-radius:3px; transform-origin:50% -30px; }
-  /* paper plane */
+  /* kagit ucak */
   .plane { position:fixed; left:-12%; top:38%; z-index:2; animation:fly 12s ease-in-out infinite; }
   @keyframes fly {
     0%   { transform:translate(0,0) rotate(6deg); }
@@ -37,7 +42,7 @@
     transform:rotate(-.6deg); }
   .card::before { content:""; position:absolute; top:-14px; left:50%; transform:translateX(-50%) rotate(2deg);
     width:120px; height:28px; background:rgba(255,209,102,.65); border-left:1px dashed rgba(0,0,0,.08);
-    border-right:1px dashed rgba(0,0,0,.08); } /* washi tape */
+    border-right:1px dashed rgba(0,0,0,.08); } /* selo bant */
   h1 { font-size:23px; font-weight:750; color:#2f3b52; margin-bottom:12px; letter-spacing:-.01em; }
   p  { font-size:14.5px; line-height:1.7; color:#68758c; }
   .stamp { margin-top:24px; display:inline-block; font:800 12px/1 inherit; letter-spacing:.12em;
@@ -47,6 +52,7 @@
 </style>
 </head>
 <body>
+  <div class="lang"><button id="btr">TR</button><button id="ben">EN</button></div>
   <div class="sun" id="sun"></div>
   <svg class="trail" width="100%" height="100%"><path id="tp" d="" stroke="#ff8f5e" stroke-width="2.5"
     stroke-dasharray="1 12" stroke-linecap="round" fill="none" opacity=".7"/></svg>
@@ -58,31 +64,41 @@
     </svg>
   </div>
   <main class="card">
-    <h1 id="title"></h1>
-    <p id="body"></p>
-    <div class="stamp" id="stamp"></div>
-    <div class="foot"><span id="foot"></span> <b id="s">30</b>s</div>
+    <h1 data-i="title"></h1>
+    <p data-i="body"></p>
+    <div class="stamp" data-i="stamp"></div>
+    <div class="foot"><span data-i="foot"></span> <b id="s">30</b>s</div>
   </main>
 <script>
-  var STR = { title:"Our paper plane is on its way!", stamp:"Maintenance — almost done",
-    body:"Our server is taking a short break. The delivery (that little paper plane) is bringing the missing pieces — everything will be back in a few minutes.",
-    foot:"This page refreshes automatically in:" };
-  document.getElementById("title").textContent = STR.title;
-  document.getElementById("body").textContent = STR.body;
-  document.getElementById("stamp").textContent = STR.stamp;
-  document.getElementById("foot").textContent = STR.foot;
-  // sun rays
+  var T = {
+    tr:{ title:"Kağıt uçağımız yolda!", stamp:"Bakımda — az kaldı",
+      body:"Sunucumuz kısa bir mola verdi. Ekibimiz (yani kağıt uçağımız) yeni parçaları taşıyor — birkaç dakika içinde her şey yerine oturacak.",
+      foot:"Sayfa otomatik yenilenecek:" },
+    en:{ title:"Our paper plane is on its way!", stamp:"Maintenance — almost done",
+      body:"Our server is taking a short break. The delivery (that little paper plane) is bringing the missing pieces — everything will be back in a few minutes.",
+      foot:"This page refreshes automatically in:" }
+  };
+  function setLang(l){ document.documentElement.lang=l;
+    document.querySelectorAll("[data-i]").forEach(function(e){ e.textContent=T[l][e.dataset.i]; });
+    document.getElementById("btr").className=l==="tr"?"on":"";
+    document.getElementById("ben").className=l==="en"?"on":"";
+    try{ localStorage.setItem("mlang",l); }catch(e){} }
+  var sv=null; try{ sv=localStorage.getItem("mlang"); }catch(e){}
+  setLang(sv || ((navigator.language||"tr").toLowerCase().startsWith("tr")?"tr":"en"));
+  document.getElementById("btr").onclick=function(){setLang("tr")};
+  document.getElementById("ben").onclick=function(){setLang("en")};
+  // gunes isinlari
   var sun=document.getElementById("sun");
   for(var i=0;i<10;i++){ var r=document.createElement("i");
     r.style.transform="translate(-50%,-50%) rotate("+(i*36)+"deg) translateY(-58px)";
     sun.appendChild(r); }
-  // clouds
+  // bulutlar
   var sizes=[[120,34,'16%',36],[90,26,'34%',52],[150,42,'58%',30],[100,30,'76%',46]];
   sizes.forEach(function(c,i){ var d=document.createElement("div"); d.className="cloud";
     d.style.width=c[0]+"px"; d.style.height=c[1]+"px"; d.style.top=c[2];
     d.style.animationDuration=c[3]+"s"; d.style.animationDelay=(-i*9)+"s";
     document.body.appendChild(d); });
-  // countdown
+  // geri sayim
   var s=30;
   setInterval(function(){ s--; if(s<=0)location.reload();
     document.getElementById("s").textContent=s; },1000);

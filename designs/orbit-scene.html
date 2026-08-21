@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Orbit — Reconnecting</title>
+<title>Yörünge — Yeniden Bağlanıyor</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { height:100%; }
@@ -17,6 +17,11 @@
   .a1 { width:44vw; height:44vw; left:-8vw; top:-10vw; background:#20337a; animation:dr 16s ease-in-out infinite alternate; }
   .a2 { width:36vw; height:36vw; right:-6vw; bottom:-8vw; background:#123a3a; animation:dr 19s ease-in-out infinite alternate-reverse; }
   @keyframes dr { to { transform:translate(6vw,4vw) scale(1.15); } }
+  .lang { position:fixed; top:18px; right:20px; display:flex; gap:4px; z-index:9;
+    background:rgba(255,255,255,.06); border-radius:999px; padding:4px; backdrop-filter:blur(8px); }
+  .lang button { border:0; background:transparent; color:#93a0be; font:600 12px/1 inherit;
+    padding:6px 12px; border-radius:999px; cursor:pointer; }
+  .lang button.on { background:#5b7cfa; color:#fff; }
   .card { position:relative; z-index:5; text-align:center; max-width:520px; width:calc(100% - 48px);
     background:rgba(15,19,32,.55); border:1px solid rgba(139,160,255,.14);
     border-radius:24px; padding:44px 42px 38px; backdrop-filter:blur(14px);
@@ -48,6 +53,7 @@
 <body>
   <canvas id="space"></canvas>
   <div class="aurora"><b class="a1"></b><b class="a2"></b></div>
+  <div class="lang"><button id="btr">TR</button><button id="ben">EN</button></div>
 
   <main class="card">
     <div class="ringwrap">
@@ -58,22 +64,36 @@
         <circle class="ringbg" cx="59" cy="59" r="54" stroke-width="7"/>
         <circle class="ringfg" id="ring" cx="59" cy="59" r="54" stroke-width="7"/>
       </svg>
-      <div class="ringnum"><b id="sec">30</b><span id="retry"></span></div>
+      <div class="ringnum"><b id="sec">30</b><span data-i="retry"></span></div>
     </div>
-    <h1 id="title"></h1>
-    <p id="body"></p>
+    <h1 data-i="title"></h1>
+    <p data-i="body"></p>
     <div class="console"><div id="lines"></div><span class="cursor"></span></div>
   </main>
 
 <script>
-  var STR = { retry:"seconds", title:"Satellite in orbit — awaiting signal",
-    body:"Our server is under brief maintenance. You will continue automatically the moment the link is restored.",
-    logs:["reaching core","scanning tunnel","aligning satellite","awaiting handshake","retrying"] };
-  document.getElementById("retry").textContent = STR.retry;
-  document.getElementById("title").textContent = STR.title;
-  document.getElementById("body").textContent = STR.body;
+  var T = {
+    tr:{ retry:"saniye", title:"Uydu yörüngede — sinyal bekleniyor",
+      body:"Sunucumuz kısa süreli bir teknik çalışmada. Bağlantı kurulduğu anda otomatik olarak devam edeceksiniz.",
+      logs:["çekirdeğe ulaşılıyor","tünel taranıyor","uydu hizalanıyor","el sıkışma bekleniyor","yeniden deneniyor"] },
+    en:{ retry:"seconds", title:"Satellite in orbit — awaiting signal",
+      body:"Our server is under brief maintenance. You will continue automatically the moment the link is restored.",
+      logs:["reaching core","scanning tunnel","aligning satellite","awaiting handshake","retrying"] }
+  };
+  var lang="tr";
+  function setLang(l){ lang=l;
+    document.documentElement.lang=l;
+    document.querySelectorAll("[data-i]").forEach(function(e){ e.textContent=T[l][e.dataset.i]; });
+    document.getElementById("btr").className=l==="tr"?"on":"";
+    document.getElementById("ben").className=l==="en"?"on":"";
+    try{ localStorage.setItem("mlang",l); }catch(e){}
+  }
+  var sv=null; try{ sv=localStorage.getItem("mlang"); }catch(e){}
+  setLang(sv || ((navigator.language||"tr").toLowerCase().startsWith("tr")?"tr":"en"));
+  document.getElementById("btr").onclick=function(){setLang("tr")};
+  document.getElementById("ben").onclick=function(){setLang("en")};
 
-  // --- countdown ring ---
+  // --- geri sayim halkasi ---
   var total=30, s=total, C=339.3;
   var ring=document.getElementById("ring"), secEl=document.getElementById("sec");
   ring.style.strokeDashoffset=0;
@@ -83,10 +103,10 @@
     ring.style.strokeDashoffset=C*(1 - s/total);
   },1000);
 
-  // --- console lines ---
+  // --- konsol satirlari ---
   var lines=document.getElementById("lines"), li=0;
   setInterval(function(){
-    var msgs=STR.logs;
+    var msgs=T[lang].logs;
     var d=document.createElement("div");
     var ok=Math.random()<0.25;
     d.innerHTML='<span class="dim">['+new Date().toTimeString().slice(0,8)+']</span> '
@@ -95,7 +115,7 @@
     while(lines.children.length>3) lines.removeChild(lines.firstChild);
   },2600);
 
-  // --- space scene: planet + orbiting satellite + shooting stars + parallax ---
+  // --- uzay sahnesi: gezegen + yorungede uydu + kayan yildizlar + paralaks ---
   var cv=document.getElementById("space"), cx=cv.getContext("2d");
   var W,H,stars=[],meteors=[],mx=0,my=0,t=0;
   function size(){ W=cv.width=innerWidth; H=cv.height=innerHeight;
@@ -106,13 +126,13 @@
   addEventListener("pointermove",function(e){ mx=(e.clientX/W-0.5); my=(e.clientY/H-0.5); });
   function frame(){
     t+=0.016; cx.clearRect(0,0,W,H);
-    // stars (parallax + twinkle)
+    // yildizlar (paralaks + parilti)
     stars.forEach(function(st){
       var o=0.25+0.55*Math.abs(Math.sin(t*1.4+st.tw));
       cx.fillStyle="rgba(142,162,255,"+o*st.z+")";
       cx.fillRect(st.x - mx*30*st.z, st.y - my*30*st.z, 1.6*st.z+0.4, 1.6*st.z+0.4);
     });
-    // shooting star
+    // kayan yildiz
     if(Math.random()<0.006) meteors.push({x:Math.random()*W*0.8+W*0.2,y:-20,vx:-(3+Math.random()*3),vy:4+Math.random()*3,l:0});
     meteors.forEach(function(m){ m.x+=m.vx; m.y+=m.vy; m.l++;
       var g=cx.createLinearGradient(m.x,m.y,m.x-m.vx*8,m.y-m.vy*8);
@@ -120,24 +140,24 @@
       cx.strokeStyle=g; cx.lineWidth=1.6; cx.beginPath();
       cx.moveTo(m.x,m.y); cx.lineTo(m.x-m.vx*8,m.y-m.vy*8); cx.stroke(); });
     meteors=meteors.filter(function(m){ return m.y<H+40 && m.l<180; });
-    // planet (the server core) — bottom right
+    // gezegen (sunucu cekirdegi) — sag altta
     var px=W*0.82 - mx*18, py=H*0.78 - my*18, pr=Math.min(W,H)*0.13;
     var pg=cx.createRadialGradient(px-pr*0.35,py-pr*0.35,pr*0.1,px,py,pr);
     pg.addColorStop(0,"#33427a"); pg.addColorStop(0.65,"#1a2348"); pg.addColorStop(1,"#0d1226");
     cx.shadowColor="rgba(91,124,250,.55)"; cx.shadowBlur=40;
     cx.fillStyle=pg; cx.beginPath(); cx.arc(px,py,pr,0,6.284); cx.fill(); cx.shadowBlur=0;
-    // pulse ring
+    // nabiz halkasi
     var pulse=(t%2.4)/2.4;
     cx.strokeStyle="rgba(126,224,163,"+(0.5*(1-pulse))+")"; cx.lineWidth=2;
     cx.beginPath(); cx.arc(px,py,pr*(1+pulse*0.5),0,6.284); cx.stroke();
-    // orbit + satellite
+    // yorunge + uydu
     cx.strokeStyle="rgba(139,160,255,.18)"; cx.lineWidth=1;
     cx.beginPath(); cx.ellipse(px,py,pr*1.9,pr*1.25,-0.5,0,6.284); cx.stroke();
     var a=t*0.9, sx=px+Math.cos(a)*pr*1.9*Math.cos(-0.5)-Math.sin(a)*pr*1.25*Math.sin(-0.5),
         sy=py+Math.cos(a)*pr*1.9*Math.sin(-0.5)+Math.sin(a)*pr*1.25*Math.cos(-0.5);
     cx.shadowColor="#7ee0a3"; cx.shadowBlur=12;
     cx.fillStyle="#7ee0a3"; cx.beginPath(); cx.arc(sx,sy,4,0,6.284); cx.fill(); cx.shadowBlur=0;
-    // satellite -> planet dashed signal
+    // uydu -> gezegen kesikli sinyal
     cx.setLineDash([4,7]); cx.lineDashOffset=-t*36;
     cx.strokeStyle="rgba(126,224,163,.45)"; cx.lineWidth=1.4;
     cx.beginPath(); cx.moveTo(sx,sy); cx.lineTo(px,py); cx.stroke(); cx.setLineDash([]);

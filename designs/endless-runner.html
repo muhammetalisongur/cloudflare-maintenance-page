@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Under Maintenance</title>
+<title>Bakımdayız</title>
 <style>
   :root { color-scheme: light dark;
     --bg:#f5f6f8; --fg:#1a1c22; --card:#fff; --muted:#6b7280; --accent:#3b6cf6;
@@ -16,6 +16,11 @@
   body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     background:var(--bg); color:var(--fg); min-height:100vh;
     display:flex; align-items:center; justify-content:center; padding:24px; }
+  .lang { position:fixed; top:18px; right:20px; display:flex; gap:4px;
+    background:var(--card); border-radius:999px; padding:4px; box-shadow:var(--shadow); }
+  .lang button { border:0; background:transparent; color:var(--muted); font:600 12px/1 inherit;
+    padding:6px 12px; border-radius:999px; cursor:pointer; }
+  .lang button.on { background:var(--accent); color:#fff; }
   .card { background:var(--card); border-radius:20px; padding:38px 36px 30px;
     max-width:520px; width:100%; text-align:center; box-shadow:var(--shadow); }
   h1 { font-size:22px; font-weight:700; margin-bottom:10px; }
@@ -29,26 +34,37 @@
 </style>
 </head>
 <body>
+  <div class="lang"><button id="btr">TR</button><button id="ben">EN</button></div>
   <main class="card">
-    <h1 id="title"></h1>
-    <p id="body"></p>
+    <h1 data-i="title"></h1>
+    <p data-i="body"></p>
     <canvas id="g" width="440" height="150"></canvas>
-    <div class="score"><span id="scoreLabel"></span> <span id="sc">0</span> · <span id="bestLabel"></span> <span id="hs">0</span></div>
-    <div class="hint" id="hint"></div>
-    <button class="online" id="back" onclick="location.reload()"></button>
+    <div class="score"><span data-i="score"></span> <span id="sc">0</span> · <span data-i="best"></span> <span id="hs">0</span></div>
+    <div class="hint" data-i="hint"></div>
+    <button class="online" id="back" onclick="location.reload()" data-i="back"></button>
   </main>
 <script>
-  var STR = { title:"Brief technical maintenance", hint:"Click or press Space to jump",
-    body:"The server will be back in a few minutes. While you wait — jump over the obstacles!",
-    score:"Score:", best:"Best:", back:"We are back online — return to site" };
-  document.getElementById("title").textContent = STR.title;
-  document.getElementById("body").textContent = STR.body;
-  document.getElementById("hint").textContent = STR.hint;
-  document.getElementById("scoreLabel").textContent = STR.score;
-  document.getElementById("bestLabel").textContent = STR.best;
-  document.getElementById("back").textContent = STR.back;
+  var T = {
+    tr:{ title:"Kısa süreli teknik çalışma", hint:"Zıplamak için tıkla ya da boşluk tuşuna bas",
+      body:"Sunucu birkaç dakikaya döner. Beklerken küçük bir oyun: engellerin üzerinden atla!",
+      score:"Skor:", best:"Rekor:", back:"Tekrar çevrimiçiyiz — siteye dön" },
+    en:{ title:"Brief technical maintenance", hint:"Click or press Space to jump",
+      body:"The server will be back in a few minutes. While you wait — jump over the obstacles!",
+      score:"Score:", best:"Best:", back:"We are back online — return to site" }
+  };
+  function setLang(l){
+    document.documentElement.lang=l;
+    document.querySelectorAll("[data-i]").forEach(function(e){ e.textContent=T[l][e.dataset.i]; });
+    document.getElementById("btr").className=l==="tr"?"on":"";
+    document.getElementById("ben").className=l==="en"?"on":"";
+    try{ localStorage.setItem("mlang",l); }catch(e){}
+  }
+  var sv=null; try{ sv=localStorage.getItem("mlang"); }catch(e){}
+  setLang(sv || ((navigator.language||"tr").toLowerCase().startsWith("tr")?"tr":"en"));
+  document.getElementById("btr").onclick=function(){setLang("tr")};
+  document.getElementById("ben").onclick=function(){setLang("en")};
 
-  // --- mini game: box runner ---
+  // --- mini oyun: kutu kosucu ---
   var cv=document.getElementById("g"), cx=cv.getContext("2d");
   var css=getComputedStyle(document.documentElement);
   function col(v){ return css.getPropertyValue(v).trim(); }
@@ -63,13 +79,13 @@
   function frame(){
     t++;
     cx.clearRect(0,0,W,H);
-    // ground line
+    // zemin
     cx.strokeStyle=col("--ground"); cx.lineWidth=2;
     cx.beginPath(); cx.moveTo(0,GY+p.h); cx.lineTo(W,GY+p.h); cx.stroke();
     if(!dead){
-      // physics
+      // fizik
       p.vy+=0.55; p.y+=p.vy; if(p.y>GY){ p.y=GY; p.vy=0; }
-      // spawn obstacle
+      // engel uret
       if(t%Math.max(46,90-Math.floor(score/8))===0){
         var h=14+Math.random()*22; obs.push({x:W+20,w:14+Math.random()*10,h:h});
       }
@@ -77,29 +93,29 @@
       for(var i=obs.length-1;i>=0;i--){
         var o=obs[i]; o.x-=speed;
         if(o.x+o.w<0){ obs.splice(i,1); score++; document.getElementById("sc").textContent=score; }
-        // collision
+        // carpisma
         if(p.x< o.x+o.w && p.x+p.w>o.x && p.y+p.h > GY+p.h-o.h){ dead=true;
           if(score>hs){ hs=score; document.getElementById("hs").textContent=hs;
             try{ localStorage.setItem("mhs",hs); }catch(e){} } }
       }
     }
-    // obstacles
+    // engeller
     cx.fillStyle=col("--muted");
     obs.forEach(function(o){ cx.fillRect(o.x, GY+p.h-o.h, o.w, o.h); });
-    // player
+    // oyuncu
     cx.fillStyle=col("--accent");
     cx.fillRect(p.x, p.y, p.w, p.h);
     cx.fillStyle=col("--card");
-    cx.fillRect(p.x+16, p.y+7, 4, 4); // eye
+    cx.fillRect(p.x+16, p.y+7, 4, 4); // goz
     if(dead){
       cx.fillStyle=col("--fg"); cx.font="700 15px system-ui"; cx.textAlign="center";
-      cx.fillText("Click to try again", W/2, 56);
+      cx.fillText(document.documentElement.lang==="tr"?"Tekrar denemek için tıkla":"Click to try again", W/2, 56);
     }
     requestAnimationFrame(frame);
   }
   frame();
 
-  // --- poll the server in the background; force-reload would interrupt the game ---
+  // --- arka planda sunucuyu yokla; oyun bolunmesin diye sayfayi zorla yenileme ---
   setInterval(function(){
     fetch(location.href, {method:"HEAD", cache:"no-store"}).then(function(r){
       if(r.ok){ document.getElementById("back").style.display="inline-block"; }

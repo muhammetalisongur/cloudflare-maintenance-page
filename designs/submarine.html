@@ -1,28 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>In Deep Waters</title>
+<title>Derin Sularda</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { height:100%; }
   body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; overflow:hidden;
     background:linear-gradient(180deg,#03253a 0%,#021a2e 45%,#010e1c 100%); color:#dff3ff;
     display:flex; align-items:center; justify-content:center; }
-  /* light rays */
+  .lang { position:fixed; top:16px; right:18px; display:flex; gap:4px; z-index:9;
+    background:rgba(255,255,255,.08); border-radius:999px; padding:4px; }
+  .lang button { border:0; background:transparent; color:#8fc3dd; font:600 12px/1 inherit;
+    padding:6px 12px; border-radius:999px; cursor:pointer; }
+  .lang button.on { background:#1f9edb; color:#fff; }
+  /* isik huzmeleri */
   .rays { position:fixed; inset:0; overflow:hidden; pointer-events:none; opacity:.25; }
   .rays i { position:absolute; top:-30%; width:14vw; height:160%;
     background:linear-gradient(180deg,rgba(120,220,255,.5),transparent 70%);
     transform:rotate(14deg); filter:blur(18px); animation:sway 9s ease-in-out infinite alternate; }
   @keyframes sway { to { transform:rotate(10deg) translateX(4vw); } }
-  /* bubbles */
+  /* baloncuklar */
   .bub { position:fixed; bottom:-30px; border-radius:50%;
     border:1.5px solid rgba(160,225,255,.5); background:rgba(160,225,255,.06);
     animation:rise linear infinite; pointer-events:none; }
   @keyframes rise { to { transform:translateY(-115vh) translateX(4vw); opacity:0; } }
-  /* submarine */
+  /* denizalti */
   .subwrap { position:fixed; left:8%; top:24%; animation:float 5.2s ease-in-out infinite; z-index:1; }
   @keyframes float { 50% { transform:translateY(-16px); } }
   .ping { position:absolute; left:118px; top:26px; width:16px; height:16px; border-radius:50%;
@@ -44,6 +49,7 @@
 </head>
 <body>
   <div class="rays"><i style="left:12%"></i><i style="left:42%;animation-delay:2s"></i><i style="left:74%;animation-delay:4s"></i></div>
+  <div class="lang"><button id="btr">TR</button><button id="ben">EN</button></div>
 
   <div class="subwrap">
     <svg width="150" height="70" viewBox="0 0 150 70" fill="none">
@@ -62,29 +68,38 @@
   </div>
 
   <main class="card">
-    <span class="badge" id="badge"></span>
-    <h1 id="title"></h1>
-    <p id="body"></p>
-    <div class="depth"><span id="depthLabel"></span> <b id="m">742</b> m · <span id="nextLabel"></span> <b id="s">30</b>s</div>
+    <span class="badge" data-i="badge"></span>
+    <h1 data-i="title"></h1>
+    <p data-i="body"></p>
+    <div class="depth"><span data-i="depth"></span> <b id="m">742</b> m · <span data-i="next"></span> <b id="s">30</b>s</div>
   </main>
 
 <script>
-  var STR = { badge:"Sonar Active", title:"Running a fault scan in deep waters",
-    body:"Our server briefly lost contact with the surface. The sonar is searching for a signal — we will resurface automatically once reconnected.",
-    depth:"Depth:", next:"Next scan:" };
-  document.getElementById("badge").textContent = STR.badge;
-  document.getElementById("title").textContent = STR.title;
-  document.getElementById("body").textContent = STR.body;
-  document.getElementById("depthLabel").textContent = STR.depth;
-  document.getElementById("nextLabel").textContent = STR.next;
-  // bubbles
+  var T = {
+    tr:{ badge:"Sonar Aktif", title:"Derin sularda kısa bir arıza taraması",
+      body:"Sunucumuz kısa süreliğine yüzeyle bağlantısını yitirdi. Sonar sinyal arıyor — bağlantı kurulunca otomatik olarak yüzeye çıkacağız.",
+      depth:"Derinlik:", next:"Sonraki tarama:" },
+    en:{ badge:"Sonar Active", title:"Running a fault scan in deep waters",
+      body:"Our server briefly lost contact with the surface. The sonar is searching for a signal — we will resurface automatically once reconnected.",
+      depth:"Depth:", next:"Next scan:" }
+  };
+  function setLang(l){ document.documentElement.lang=l;
+    document.querySelectorAll("[data-i]").forEach(function(e){ e.textContent=T[l][e.dataset.i]; });
+    document.getElementById("btr").className=l==="tr"?"on":"";
+    document.getElementById("ben").className=l==="en"?"on":"";
+    try{ localStorage.setItem("mlang",l); }catch(e){} }
+  var sv=null; try{ sv=localStorage.getItem("mlang"); }catch(e){}
+  setLang(sv || ((navigator.language||"tr").toLowerCase().startsWith("tr")?"tr":"en"));
+  document.getElementById("btr").onclick=function(){setLang("tr")};
+  document.getElementById("ben").onclick=function(){setLang("en")};
+  // baloncuklar
   for(var i=0;i<16;i++){ var b=document.createElement("i"); b.className="bub";
     var sz=6+Math.random()*16; b.style.width=b.style.height=sz+"px";
     b.style.left=(Math.random()*100)+"%";
     b.style.animationDuration=(6+Math.random()*8)+"s";
     b.style.animationDelay=(Math.random()*8)+"s";
     document.body.appendChild(b); }
-  // depth + countdown
+  // derinlik + geri sayim
   var s=30, m=742;
   setInterval(function(){
     s--; if(s<=0){ location.reload(); }
