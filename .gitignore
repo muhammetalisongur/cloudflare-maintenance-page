@@ -1,0 +1,7 @@
+# Build output — regenerate with `node build-worker.js`
+worker.js
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini

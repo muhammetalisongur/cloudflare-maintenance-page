@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Under Maintenance</title>
+<style>
+  :root { color-scheme: light dark;
+    --bg:#f5f6f8; --fg:#1a1c22; --card:#fff; --muted:#6b7280; --accent:#3b6cf6;
+    --ground:#c9ced8; --shadow:0 10px 40px rgba(15,23,42,.09); }
+  @media (prefers-color-scheme: dark) { :root {
+    --bg:#111318; --fg:#e7e9ee; --card:#1b1f27; --muted:#8b93a1;
+    --ground:#39404e; --shadow:0 10px 40px rgba(0,0,0,.5); } }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--fg); min-height:100vh;
+    display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card { background:var(--card); border-radius:20px; padding:38px 36px 30px;
+    max-width:520px; width:100%; text-align:center; box-shadow:var(--shadow); }
+  h1 { font-size:22px; font-weight:700; margin-bottom:10px; }
+  p  { font-size:14.5px; line-height:1.6; color:var(--muted); }
+  .hint { margin-top:16px; font:600 12.5px/1.5 inherit; color:var(--accent); }
+  canvas { display:block; width:100%; max-width:440px; margin:18px auto 4px;
+    border-radius:12px; background:transparent; touch-action:manipulation; }
+  .score { font:700 13px/1 inherit; color:var(--muted); margin-top:4px; }
+  .online { display:none; margin-top:18px; background:#22c55e; color:#fff;
+    border:0; border-radius:10px; padding:12px 20px; font:700 14px/1 inherit; cursor:pointer; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <h1 id="title"></h1>
+    <p id="body"></p>
+    <canvas id="g" width="440" height="150"></canvas>
+    <div class="score"><span id="scoreLabel"></span> <span id="sc">0</span> · <span id="bestLabel"></span> <span id="hs">0</span></div>
+    <div class="hint" id="hint"></div>
+    <button class="online" id="back" onclick="location.reload()"></button>
+  </main>
+<script>
+  var STR = { title:"Brief technical maintenance", hint:"Click or press Space to jump",
+    body:"The server will be back in a few minutes. While you wait — jump over the obstacles!",
+    score:"Score:", best:"Best:", back:"We are back online — return to site" };
+  document.getElementById("title").textContent = STR.title;
+  document.getElementById("body").textContent = STR.body;
+  document.getElementById("hint").textContent = STR.hint;
+  document.getElementById("scoreLabel").textContent = STR.score;
+  document.getElementById("bestLabel").textContent = STR.best;
+  document.getElementById("back").textContent = STR.back;
+
+  // --- mini game: box runner ---
+  var cv=document.getElementById("g"), cx=cv.getContext("2d");
+  var css=getComputedStyle(document.documentElement);
+  function col(v){ return css.getPropertyValue(v).trim(); }
+  var W=440,H=150,GY=118;
+  var p={x:46,y:GY,vy:0,w:26,h:26}, obs=[], t=0, speed=3.2, score=0, dead=false;
+  var hs=0; try{ hs=+localStorage.getItem("mhs")||0; }catch(e){}
+  document.getElementById("hs").textContent=hs;
+  function jump(){ if(dead){ reset(); return; } if(p.y>=GY-1){ p.vy=-9.4; } }
+  addEventListener("keydown",function(e){ if(e.code==="Space"){ e.preventDefault(); jump(); }});
+  cv.addEventListener("pointerdown",jump);
+  function reset(){ obs=[]; t=0; speed=3.2; score=0; dead=false; p.y=GY; p.vy=0; }
+  function frame(){
+    t++;
+    cx.clearRect(0,0,W,H);
+    // ground line
+    cx.strokeStyle=col("--ground"); cx.lineWidth=2;
+    cx.beginPath(); cx.moveTo(0,GY+p.h); cx.lineTo(W,GY+p.h); cx.stroke();
+    if(!dead){
+      // physics
+      p.vy+=0.55; p.y+=p.vy; if(p.y>GY){ p.y=GY; p.vy=0; }
+      // spawn obstacle
+      if(t%Math.max(46,90-Math.floor(score/8))===0){
+        var h=14+Math.random()*22; obs.push({x:W+20,w:14+Math.random()*10,h:h});
+      }
+      speed=3.2+Math.min(3.5,score/25);
+      for(var i=obs.length-1;i>=0;i--){
+        var o=obs[i]; o.x-=speed;
+        if(o.x+o.w<0){ obs.splice(i,1); score++; document.getElementById("sc").textContent=score; }
+        // collision
+        if(p.x< o.x+o.w && p.x+p.w>o.x && p.y+p.h > GY+p.h-o.h){ dead=true;
+          if(score>hs){ hs=score; document.getElementById("hs").textContent=hs;
+            try{ localStorage.setItem("mhs",hs); }catch(e){} } }
+      }
+    }
+    // obstacles
+    cx.fillStyle=col("--muted");
+    obs.forEach(function(o){ cx.fillRect(o.x, GY+p.h-o.h, o.w, o.h); });
+    // player
+    cx.fillStyle=col("--accent");
+    cx.fillRect(p.x, p.y, p.w, p.h);
+    cx.fillStyle=col("--card");
+    cx.fillRect(p.x+16, p.y+7, 4, 4); // eye
+    if(dead){
+      cx.fillStyle=col("--fg"); cx.font="700 15px system-ui"; cx.textAlign="center";
+      cx.fillText("Click to try again", W/2, 56);
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+
+  // --- poll the server in the background; force-reload would interrupt the game ---
+  setInterval(function(){
+    fetch(location.href, {method:"HEAD", cache:"no-store"}).then(function(r){
+      if(r.ok){ document.getElementById("back").style.display="inline-block"; }
+    }).catch(function(){});
+  }, 20000);
+</script>
+</body>
+</html>

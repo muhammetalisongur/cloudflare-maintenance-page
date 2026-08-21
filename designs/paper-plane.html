@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Paper Sky</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; overflow:hidden;
+    background:linear-gradient(180deg,#aee3f7 0%,#d7f0fb 60%,#f6e9d4 100%); color:#334;
+    display:flex; align-items:center; justify-content:center; }
+  /* paper clouds */
+  .cloud { position:fixed; background:#fff; border-radius:999px;
+    box-shadow:0 14px 24px rgba(70,110,160,.18); animation:drift linear infinite; }
+  .cloud::before,.cloud::after { content:""; position:absolute; background:#fff; border-radius:50%; }
+  .cloud::before { width:55%; height:160%; left:14%; bottom:20%; }
+  .cloud::after  { width:38%; height:120%; right:12%; bottom:26%; }
+  @keyframes drift { from { transform:translateX(-30vw);} to { transform:translateX(130vw);} }
+  /* sun */
+  .sun { position:fixed; top:9%; left:11%; width:88px; height:88px; border-radius:50%;
+    background:#ffd166; box-shadow:0 10px 22px rgba(230,160,40,.35); }
+  .sun i { position:absolute; left:50%; top:50%; width:5px; height:22px; background:#ffd166;
+    border-radius:3px; transform-origin:50% -30px; }
+  /* paper plane */
+  .plane { position:fixed; left:-12%; top:38%; z-index:2; animation:fly 12s ease-in-out infinite; }
+  @keyframes fly {
+    0%   { transform:translate(0,0) rotate(6deg); }
+    30%  { transform:translate(45vw,-9vh) rotate(-4deg); }
+    60%  { transform:translate(85vw,2vh) rotate(8deg); }
+    100% { transform:translate(130vw,-6vh) rotate(-2deg); } }
+  .trail { position:fixed; left:0; top:0; z-index:1; pointer-events:none; }
+  .card { position:relative; z-index:5; text-align:center; max-width:460px; width:calc(100% - 44px);
+    background:#fffdf8; border-radius:8px; padding:44px 40px 38px;
+    box-shadow:0 24px 60px rgba(70,100,150,.22), 0 3px 0 #e8e0d0;
+    transform:rotate(-.6deg); }
+  .card::before { content:""; position:absolute; top:-14px; left:50%; transform:translateX(-50%) rotate(2deg);
+    width:120px; height:28px; background:rgba(255,209,102,.65); border-left:1px dashed rgba(0,0,0,.08);
+    border-right:1px dashed rgba(0,0,0,.08); } /* washi tape */
+  h1 { font-size:23px; font-weight:750; color:#2f3b52; margin-bottom:12px; letter-spacing:-.01em; }
+  p  { font-size:14.5px; line-height:1.7; color:#68758c; }
+  .stamp { margin-top:24px; display:inline-block; font:800 12px/1 inherit; letter-spacing:.12em;
+    text-transform:uppercase; color:#e0483f; border:2.5px solid #e0483f; border-radius:6px;
+    padding:9px 14px; transform:rotate(-4deg); opacity:.85; }
+  .foot { margin-top:20px; font-size:12.5px; color:#9aa5b8; }
+</style>
+</head>
+<body>
+  <div class="sun" id="sun"></div>
+  <svg class="trail" width="100%" height="100%"><path id="tp" d="" stroke="#ff8f5e" stroke-width="2.5"
+    stroke-dasharray="1 12" stroke-linecap="round" fill="none" opacity=".7"/></svg>
+  <div class="plane">
+    <svg width="92" height="60" viewBox="0 0 92 60" fill="none">
+      <path d="M2 30 L88 4 L54 34 z" fill="#fff" stroke="#d8dde8" stroke-width="1.5"/>
+      <path d="M2 30 L54 34 L44 54 z" fill="#eef1f7" stroke="#d8dde8" stroke-width="1.5"/>
+      <path d="M54 34 L88 4 L60 40 z" fill="#dde4f0" stroke="#c9d1e2" stroke-width="1"/>
+    </svg>
+  </div>
+  <main class="card">
+    <h1 id="title"></h1>
+    <p id="body"></p>
+    <div class="stamp" id="stamp"></div>
+    <div class="foot"><span id="foot"></span> <b id="s">30</b>s</div>
+  </main>
+<script>
+  var STR = { title:"Our paper plane is on its way!", stamp:"Maintenance — almost done",
+    body:"Our server is taking a short break. The delivery (that little paper plane) is bringing the missing pieces — everything will be back in a few minutes.",
+    foot:"This page refreshes automatically in:" };
+  document.getElementById("title").textContent = STR.title;
+  document.getElementById("body").textContent = STR.body;
+  document.getElementById("stamp").textContent = STR.stamp;
+  document.getElementById("foot").textContent = STR.foot;
+  // sun rays
+  var sun=document.getElementById("sun");
+  for(var i=0;i<10;i++){ var r=document.createElement("i");
+    r.style.transform="translate(-50%,-50%) rotate("+(i*36)+"deg) translateY(-58px)";
+    sun.appendChild(r); }
+  // clouds
+  var sizes=[[120,34,'16%',36],[90,26,'34%',52],[150,42,'58%',30],[100,30,'76%',46]];
+  sizes.forEach(function(c,i){ var d=document.createElement("div"); d.className="cloud";
+    d.style.width=c[0]+"px"; d.style.height=c[1]+"px"; d.style.top=c[2];
+    d.style.animationDuration=c[3]+"s"; d.style.animationDelay=(-i*9)+"s";
+    document.body.appendChild(d); });
+  // countdown
+  var s=30;
+  setInterval(function(){ s--; if(s<=0)location.reload();
+    document.getElementById("s").textContent=s; },1000);
+</script>
+</body>
+</html>

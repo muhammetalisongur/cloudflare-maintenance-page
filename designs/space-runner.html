@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Under Maintenance</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(1200px 700px at 50% -10%, #1d2b53 0%, #10141f 55%, #0a0d14 100%);
+    color:#e8ebf2; padding:24px; overflow:hidden; }
+  .stars { position:fixed; inset:0; pointer-events:none; }
+  .stars i { position:absolute; width:2px; height:2px; border-radius:50%;
+    background:#8ea2ff; opacity:.35; animation:tw 3.2s ease-in-out infinite; }
+  @keyframes tw { 50% { opacity:.9; transform:scale(1.6);} }
+  .wrap { text-align:center; max-width:560px; width:100%; position:relative; z-index:2; }
+  svg.scene { width:min(300px,70vw); height:auto; margin-bottom:6px; }
+  .led { animation:led 1.1s steps(2) infinite; }
+  .led.l2{animation-delay:.28s} .led.l3{animation-delay:.55s}
+  @keyframes led { 50% { opacity:.15; } }
+  .beam { stroke-dasharray:7 9; animation:flow 1s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset:-16; } }
+  .cloudbob { animation:bob 3.4s ease-in-out infinite; }
+  @keyframes bob { 50% { transform:translateY(-6px);} }
+  h1 { font-size:23px; font-weight:700; letter-spacing:-.01em; margin:6px 0 10px; }
+  p  { font-size:14.5px; line-height:1.65; color:#9aa6c2; }
+  canvas { display:block; width:100%; max-width:480px; margin:20px auto 6px;
+    border-radius:14px; background:rgba(255,255,255,.035);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.07); touch-action:manipulation; }
+  .score { font:700 13px/1 inherit; color:#7aa2ff; margin-top:6px; letter-spacing:.03em; }
+  .hint { margin-top:10px; font:600 12px/1.5 inherit; color:#6b7796; }
+  .online { display:none; margin-top:16px; background:#22c55e; color:#08130b;
+    border:0; border-radius:10px; padding:12px 22px; font:700 14px/1 inherit; cursor:pointer; }
+</style>
+</head>
+<body>
+  <div class="stars" id="stars"></div>
+  <main class="wrap">
+    <svg class="scene" viewBox="0 0 360 150" fill="none" aria-hidden="true">
+      <rect x="38" y="46" width="86" height="78" rx="9" fill="#1a2136" stroke="#33405f" stroke-width="2"/>
+      <rect x="50" y="58" width="62" height="14" rx="4" fill="#232c48"/>
+      <rect x="50" y="80" width="62" height="14" rx="4" fill="#232c48"/>
+      <rect x="50" y="102" width="62" height="14" rx="4" fill="#232c48"/>
+      <circle class="led"    cx="103" cy="65"  r="3.4" fill="#f2b83c"/>
+      <circle class="led l2" cx="103" cy="87"  r="3.4" fill="#f2b83c"/>
+      <circle class="led l3" cx="103" cy="109" r="3.4" fill="#5bdb8b"/>
+      <path class="beam" d="M124 88 C 172 88, 182 60, 230 60" stroke="#5b7cfa" stroke-width="3" stroke-linecap="round"/>
+      <g class="cloudbob">
+        <path d="M252 76 a20 20 0 0 1 2-39 a25 25 0 0 1 49-6 a18 18 0 0 1 5 35 z"
+              fill="#202a49" stroke="#41528a" stroke-width="2.4"/>
+      </g>
+    </svg>
+    <h1 id="title"></h1>
+    <p id="body"></p>
+    <canvas id="g" width="480" height="150"></canvas>
+    <div class="score"><span id="scoreLabel"></span> <span id="sc">0</span> · <span id="bestLabel"></span> <span id="hs">0</span></div>
+    <div class="hint" id="hint"></div>
+    <button class="online" id="back" onclick="location.reload()"></button>
+  </main>
+<script>
+  var STR = { title:"Reconnecting to the server", hint:"Click or press Space to jump",
+    body:"Brief maintenance in progress — back in a few minutes. Meanwhile, dodge the firewalls with your data packet!",
+    score:"Score:", best:"Best:", back:"We are back online — return to site" };
+  document.getElementById("title").textContent = STR.title;
+  document.getElementById("body").textContent = STR.body;
+  document.getElementById("hint").textContent = STR.hint;
+  document.getElementById("scoreLabel").textContent = STR.score;
+  document.getElementById("bestLabel").textContent = STR.best;
+  document.getElementById("back").textContent = STR.back;
+
+  var st=document.getElementById("stars");
+  for(var i=0;i<44;i++){ var d=document.createElement("i");
+    d.style.left=(Math.random()*100)+"%"; d.style.top=(Math.random()*100)+"%";
+    d.style.animationDelay=(Math.random()*3)+"s"; st.appendChild(d); }
+
+  // --- neon runner ---
+  var cv=document.getElementById("g"), cx=cv.getContext("2d");
+  var W=480,H=150,GY=112,PH=26;
+  var p={x:52,y:GY,vy:0,w:26,h:PH}, obs=[], trail=[], t=0, score=0, dead=false;
+  var hs=0; try{ hs=+localStorage.getItem("mhs")||0; }catch(e){}
+  document.getElementById("hs").textContent=hs;
+  function jump(){ if(dead){ obs=[];trail=[];t=0;score=0;dead=false;p.y=GY;p.vy=0;
+      document.getElementById("sc").textContent=0; return; }
+    if(p.y>=GY-1){ p.vy=-9.6; } }
+  addEventListener("keydown",function(e){ if(e.code==="Space"){ e.preventDefault(); jump(); }});
+  cv.addEventListener("pointerdown",jump);
+  function frame(){
+    t++; cx.clearRect(0,0,W,H);
+    // neon ground line
+    var gr=cx.createLinearGradient(0,0,W,0);
+    gr.addColorStop(0,"rgba(91,124,250,.05)"); gr.addColorStop(.5,"rgba(91,124,250,.6)"); gr.addColorStop(1,"rgba(91,124,250,.05)");
+    cx.fillStyle=gr; cx.fillRect(0,GY+PH+2,W,2);
+    if(!dead){
+      p.vy+=0.56; p.y+=p.vy; if(p.y>GY){ p.y=GY; p.vy=0; }
+      trail.push({x:p.x,y:p.y}); if(trail.length>9)trail.shift();
+      if(t%Math.max(44,88-Math.floor(score/7))===0){
+        var h=16+Math.random()*26; obs.push({x:W+20,w:13+Math.random()*10,h:h});
+      }
+      var speed=3.4+Math.min(3.8,score/22);
+      for(var i=obs.length-1;i>=0;i--){
+        var o=obs[i]; o.x-=speed;
+        if(o.x+o.w<0){ obs.splice(i,1); score++; document.getElementById("sc").textContent=score; }
+        if(p.x<o.x+o.w && p.x+p.w>o.x && p.y+p.h > GY+PH-o.h){ dead=true;
+          if(score>hs){ hs=score; document.getElementById("hs").textContent=hs;
+            try{ localStorage.setItem("mhs",hs); }catch(e){} } }
+      }
+    }
+    // firewall obstacles (red neon)
+    obs.forEach(function(o){
+      cx.shadowColor="#ff5d5d"; cx.shadowBlur=10; cx.fillStyle="#e0483f";
+      cx.fillRect(o.x, GY+PH-o.h, o.w, o.h); cx.shadowBlur=0;
+      cx.fillStyle="rgba(255,255,255,.25)";
+      for(var y=GY+PH-o.h+3; y<GY+PH-3; y+=6) cx.fillRect(o.x+2,y,o.w-4,1);
+    });
+    // trail
+    trail.forEach(function(tr,i){
+      cx.fillStyle="rgba(91,124,250,"+(i/trail.length*0.35)+")";
+      cx.fillRect(tr.x-((trail.length-i)*3), tr.y+5, 14, PH-10);
+    });
+    // player: a glowing data packet
+    cx.shadowColor="#5b7cfa"; cx.shadowBlur=14; cx.fillStyle="#5b7cfa";
+    cx.fillRect(p.x, p.y, p.w, p.h); cx.shadowBlur=0;
+    cx.fillStyle="#0a0d14"; cx.fillRect(p.x+16,p.y+7,4,4);
+    cx.fillStyle="rgba(255,255,255,.5)"; cx.fillRect(p.x+3,p.y+3,p.w-6,2);
+    if(dead){
+      cx.fillStyle="#e8ebf2"; cx.font="700 15px system-ui"; cx.textAlign="center";
+      cx.fillText("Click to try again", W/2, 52);
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+  setInterval(function(){
+    fetch(location.href,{method:"HEAD",cache:"no-store"}).then(function(r){
+      if(r.ok){ document.getElementById("back").style.display="inline-block"; }
+    }).catch(function(){});
+  },20000);
+</script>
+</body>
+</html>

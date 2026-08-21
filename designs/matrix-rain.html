@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Reweaving the System</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; overflow:hidden;
+    background:#020604; color:#d8ffe9; display:flex; align-items:center; justify-content:center; }
+  #rain { position:fixed; inset:0; }
+  .card { position:relative; z-index:5; text-align:center; max-width:480px; width:calc(100% - 44px);
+    background:rgba(1,14,7,.78); border:1px solid rgba(74,222,128,.28);
+    border-radius:18px; padding:42px 38px 36px; backdrop-filter:blur(6px);
+    box-shadow:0 0 60px rgba(34,197,94,.14), 0 30px 80px rgba(0,0,0,.7); }
+  .glitch { position:relative; display:inline-block; font-size:24px; font-weight:800;
+    letter-spacing:-.01em; margin-bottom:12px; }
+  .glitch::before,.glitch::after { content:attr(data-t); position:absolute; left:0; top:0; width:100%; }
+  .glitch::before { color:#38bdf8; clip-path:inset(0 0 55% 0);
+    animation:gl 2.8s steps(3) infinite; }
+  .glitch::after { color:#ff5d7e; clip-path:inset(55% 0 0 0);
+    animation:gl 2.8s steps(3) infinite reverse; }
+  @keyframes gl { 0%,88%,100% { transform:translate(0,0); opacity:0; }
+    90% { transform:translate(-3px,1px); opacity:.85; }
+    94% { transform:translate(3px,-1px); opacity:.85; } }
+  p { font-size:14.5px; line-height:1.7; color:#86d1a8; }
+  .type { margin-top:22px; min-height:22px;
+    font:13px/1.6 ui-monospace,Consolas,monospace; color:#4ade80;
+    text-shadow:0 0 8px rgba(74,222,128,.5); }
+  .cursor::after { content:"█"; animation:cb .8s steps(1) infinite; }
+  @keyframes cb { 50% { opacity:0; } }
+  .foot { margin-top:16px; font:600 12px/1 inherit; color:#3f9463; }
+</style>
+</head>
+<body>
+  <canvas id="rain"></canvas>
+  <main class="card">
+    <span class="glitch" id="gt" data-t=""></span>
+    <p id="body"></p>
+    <div class="type"><span id="ty"></span><span class="cursor"></span></div>
+    <div class="foot"><span id="foot"></span> <b id="s">30</b>s</div>
+  </main>
+<script>
+  var STR = { title:"REWEAVING THE SYSTEM",
+    body:"This corner of reality is briefly offline. Once the code rain settles, everything continues right where it left off.",
+    lines:["> compiling core modules...","> scanning connection matrix...","> awaiting tunnel handshake...","> reweave 87%..."],
+    foot:"Retrying in:" };
+  document.getElementById("body").textContent = STR.body;
+  document.getElementById("foot").textContent = STR.foot;
+  var g=document.getElementById("gt"); g.textContent=STR.title; g.setAttribute("data-t",STR.title);
+  // matrix rain
+  var cv=document.getElementById("rain"), cx=cv.getContext("2d");
+  var W,H,cols,drops,FS=16, CH="ｱｲｳｴｵｶｷｸｹｺ01<>/=+#$アカサタナ";
+  function size(){ W=cv.width=innerWidth; H=cv.height=innerHeight;
+    cols=Math.floor(W/FS); drops=[];
+    for(var i=0;i<cols;i++) drops.push({y:Math.random()*-H/FS, sp:0.5+Math.random()*0.9}); }
+  size(); addEventListener("resize",size);
+  setInterval(function(){
+    cx.fillStyle="rgba(2,6,4,0.12)"; cx.fillRect(0,0,W,H);
+    cx.font=FS+"px monospace";
+    for(var i=0;i<cols;i++){
+      var d=drops[i], ch=CH[Math.floor(Math.random()*CH.length)];
+      cx.fillStyle="rgba(220,255,235,.95)"; cx.fillText(ch, i*FS, d.y*FS);
+      cx.fillStyle="rgba(34,197,94,.65)"; cx.fillText(ch, i*FS, (d.y-1)*FS);
+      d.y+=d.sp;
+      if(d.y*FS>H && Math.random()>0.975){ d.y=Math.random()*-12; d.sp=0.5+Math.random()*0.9; } }
+  },50);
+  // typing console line
+  var ti=0, ci=0, ty=document.getElementById("ty");
+  setInterval(function(){
+    var line=STR.lines[ti%STR.lines.length];
+    ci++; ty.textContent=line.slice(0,ci);
+    if(ci>line.length+14){ ci=0; ti++; } },55);
+  // countdown
+  var s=30;
+  setInterval(function(){ s--; if(s<=0)location.reload();
+    document.getElementById("s").textContent=s; },1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Orbit — Reconnecting</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:#070910; color:#e9edf6; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; }
+  #space { position:fixed; inset:0; }
+  .aurora { position:fixed; inset:-20%; pointer-events:none; filter:blur(70px); opacity:.5; }
+  .aurora b { position:absolute; border-radius:50%; }
+  .a1 { width:44vw; height:44vw; left:-8vw; top:-10vw; background:#20337a; animation:dr 16s ease-in-out infinite alternate; }
+  .a2 { width:36vw; height:36vw; right:-6vw; bottom:-8vw; background:#123a3a; animation:dr 19s ease-in-out infinite alternate-reverse; }
+  @keyframes dr { to { transform:translate(6vw,4vw) scale(1.15); } }
+  .card { position:relative; z-index:5; text-align:center; max-width:520px; width:calc(100% - 48px);
+    background:rgba(15,19,32,.55); border:1px solid rgba(139,160,255,.14);
+    border-radius:24px; padding:44px 42px 38px; backdrop-filter:blur(14px);
+    box-shadow:0 30px 80px rgba(0,0,0,.55); }
+  .ringwrap { position:relative; width:118px; height:118px; margin:0 auto 24px; }
+  .ringwrap svg { transform:rotate(-90deg); }
+  .ringbg { stroke:rgba(139,160,255,.15); }
+  .ringfg { stroke:url(#rg); stroke-linecap:round;
+    stroke-dasharray:339.3; transition:stroke-dashoffset 1s linear;
+    filter:drop-shadow(0 0 6px rgba(91,124,250,.8)); }
+  .ringnum { position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; }
+  .ringnum b { font-size:30px; font-weight:750; letter-spacing:-.02em; }
+  .ringnum span { font-size:10.5px; color:#8b98b8; letter-spacing:.14em; text-transform:uppercase; margin-top:2px; }
+  h1 { font-size:24px; font-weight:720; letter-spacing:-.015em; margin-bottom:12px; }
+  p  { font-size:14.5px; line-height:1.7; color:#9aa7c6; }
+  .console { margin-top:26px; text-align:left; background:rgba(2,4,10,.55);
+    border:1px solid rgba(139,160,255,.12); border-radius:12px;
+    padding:14px 16px; font:12.5px/1.9 ui-monospace,Consolas,monospace; color:#7ee0a3;
+    min-height:78px; }
+  .console .dim { color:#5b6a8c; }
+  .cursor::after { content:"▌"; animation:cb .9s steps(1) infinite; }
+  @keyframes cb { 50% { opacity:0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .aurora, .cursor::after { animation:none !important; }
+  }
+</style>
+</head>
+<body>
+  <canvas id="space"></canvas>
+  <div class="aurora"><b class="a1"></b><b class="a2"></b></div>
+
+  <main class="card">
+    <div class="ringwrap">
+      <svg width="118" height="118" viewBox="0 0 118 118" fill="none">
+        <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#5b7cfa"/><stop offset="1" stop-color="#7ee0a3"/>
+        </linearGradient></defs>
+        <circle class="ringbg" cx="59" cy="59" r="54" stroke-width="7"/>
+        <circle class="ringfg" id="ring" cx="59" cy="59" r="54" stroke-width="7"/>
+      </svg>
+      <div class="ringnum"><b id="sec">30</b><span id="retry"></span></div>
+    </div>
+    <h1 id="title"></h1>
+    <p id="body"></p>
+    <div class="console"><div id="lines"></div><span class="cursor"></span></div>
+  </main>
+
+<script>
+  var STR = { retry:"seconds", title:"Satellite in orbit — awaiting signal",
+    body:"Our server is under brief maintenance. You will continue automatically the moment the link is restored.",
+    logs:["reaching core","scanning tunnel","aligning satellite","awaiting handshake","retrying"] };
+  document.getElementById("retry").textContent = STR.retry;
+  document.getElementById("title").textContent = STR.title;
+  document.getElementById("body").textContent = STR.body;
+
+  // --- countdown ring ---
+  var total=30, s=total, C=339.3;
+  var ring=document.getElementById("ring"), secEl=document.getElementById("sec");
+  ring.style.strokeDashoffset=0;
+  setInterval(function(){
+    s--; if(s<0){ location.reload(); return; }
+    secEl.textContent=s;
+    ring.style.strokeDashoffset=C*(1 - s/total);
+  },1000);
+
+  // --- console lines ---
+  var lines=document.getElementById("lines"), li=0;
+  setInterval(function(){
+    var msgs=STR.logs;
+    var d=document.createElement("div");
+    var ok=Math.random()<0.25;
+    d.innerHTML='<span class="dim">['+new Date().toTimeString().slice(0,8)+']</span> '
+      + msgs[li%msgs.length] + (ok?' <span style="color:#f2b83c">…timeout</span>':'…');
+    lines.appendChild(d); li++;
+    while(lines.children.length>3) lines.removeChild(lines.firstChild);
+  },2600);
+
+  // --- space scene: planet + orbiting satellite + shooting stars + parallax ---
+  var cv=document.getElementById("space"), cx=cv.getContext("2d");
+  var W,H,stars=[],meteors=[],mx=0,my=0,t=0;
+  function size(){ W=cv.width=innerWidth; H=cv.height=innerHeight;
+    stars=[]; for(var i=0;i<Math.min(160,W/8);i++)
+      stars.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*1+0.3,tw:Math.random()*6.28});
+  }
+  size(); addEventListener("resize",size);
+  addEventListener("pointermove",function(e){ mx=(e.clientX/W-0.5); my=(e.clientY/H-0.5); });
+  function frame(){
+    t+=0.016; cx.clearRect(0,0,W,H);
+    // stars (parallax + twinkle)
+    stars.forEach(function(st){
+      var o=0.25+0.55*Math.abs(Math.sin(t*1.4+st.tw));
+      cx.fillStyle="rgba(142,162,255,"+o*st.z+")";
+      cx.fillRect(st.x - mx*30*st.z, st.y - my*30*st.z, 1.6*st.z+0.4, 1.6*st.z+0.4);
+    });
+    // shooting star
+    if(Math.random()<0.006) meteors.push({x:Math.random()*W*0.8+W*0.2,y:-20,vx:-(3+Math.random()*3),vy:4+Math.random()*3,l:0});
+    meteors.forEach(function(m){ m.x+=m.vx; m.y+=m.vy; m.l++;
+      var g=cx.createLinearGradient(m.x,m.y,m.x-m.vx*8,m.y-m.vy*8);
+      g.addColorStop(0,"rgba(255,255,255,.9)"); g.addColorStop(1,"rgba(255,255,255,0)");
+      cx.strokeStyle=g; cx.lineWidth=1.6; cx.beginPath();
+      cx.moveTo(m.x,m.y); cx.lineTo(m.x-m.vx*8,m.y-m.vy*8); cx.stroke(); });
+    meteors=meteors.filter(function(m){ return m.y<H+40 && m.l<180; });
+    // planet (the server core) — bottom right
+    var px=W*0.82 - mx*18, py=H*0.78 - my*18, pr=Math.min(W,H)*0.13;
+    var pg=cx.createRadialGradient(px-pr*0.35,py-pr*0.35,pr*0.1,px,py,pr);
+    pg.addColorStop(0,"#33427a"); pg.addColorStop(0.65,"#1a2348"); pg.addColorStop(1,"#0d1226");
+    cx.shadowColor="rgba(91,124,250,.55)"; cx.shadowBlur=40;
+    cx.fillStyle=pg; cx.beginPath(); cx.arc(px,py,pr,0,6.284); cx.fill(); cx.shadowBlur=0;
+    // pulse ring
+    var pulse=(t%2.4)/2.4;
+    cx.strokeStyle="rgba(126,224,163,"+(0.5*(1-pulse))+")"; cx.lineWidth=2;
+    cx.beginPath(); cx.arc(px,py,pr*(1+pulse*0.5),0,6.284); cx.stroke();
+    // orbit + satellite
+    cx.strokeStyle="rgba(139,160,255,.18)"; cx.lineWidth=1;
+    cx.beginPath(); cx.ellipse(px,py,pr*1.9,pr*1.25,-0.5,0,6.284); cx.stroke();
+    var a=t*0.9, sx=px+Math.cos(a)*pr*1.9*Math.cos(-0.5)-Math.sin(a)*pr*1.25*Math.sin(-0.5),
+        sy=py+Math.cos(a)*pr*1.9*Math.sin(-0.5)+Math.sin(a)*pr*1.25*Math.cos(-0.5);
+    cx.shadowColor="#7ee0a3"; cx.shadowBlur=12;
+    cx.fillStyle="#7ee0a3"; cx.beginPath(); cx.arc(sx,sy,4,0,6.284); cx.fill(); cx.shadowBlur=0;
+    // satellite -> planet dashed signal
+    cx.setLineDash([4,7]); cx.lineDashOffset=-t*36;
+    cx.strokeStyle="rgba(126,224,163,.45)"; cx.lineWidth=1.4;
+    cx.beginPath(); cx.moveTo(sx,sy); cx.lineTo(px,py); cx.stroke(); cx.setLineDash([]);
+    requestAnimationFrame(frame);
+  }
+  frame();
+</script>
+</body>
+</html>

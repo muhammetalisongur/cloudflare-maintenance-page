@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>SYSTEM HALT</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body { background:#050805; overflow:hidden; display:flex; align-items:center; justify-content:center;
+    font:15px/1.65 ui-monospace,"Cascadia Mono",Consolas,monospace; color:#33ff66; }
+  .crt { position:relative; width:min(720px, calc(100% - 36px)); height:min(480px, 86vh);
+    background:radial-gradient(120% 100% at 50% 40%, #08140a 0%, #040904 80%);
+    border-radius:26px; padding:38px 44px; overflow:hidden;
+    box-shadow:0 0 0 10px #1a1d1a, 0 0 0 13px #0c0e0c, 0 34px 90px rgba(0,0,0,.8),
+      inset 0 0 90px rgba(30,255,100,.07); }
+  /* scanlines + flicker */
+  .crt::before { content:""; position:absolute; inset:0; pointer-events:none; z-index:3;
+    background:repeating-linear-gradient(180deg, rgba(0,0,0,.22) 0 2px, transparent 2px 4px); }
+  .crt::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:4;
+    background:radial-gradient(105% 90% at 50% 50%, transparent 60%, rgba(0,0,0,.55) 100%);
+    animation:flick 4.5s steps(60) infinite; }
+  @keyframes flick { 92% { opacity:1; } 93% { opacity:.82; } 94% { opacity:1; } }
+  .sweep { position:absolute; left:0; right:0; height:90px; z-index:2; pointer-events:none;
+    background:linear-gradient(180deg, transparent, rgba(51,255,102,.06), transparent);
+    animation:sweep 6s linear infinite; }
+  @keyframes sweep { from { top:-20%; } to { top:110%; } }
+  pre { position:relative; z-index:1; white-space:pre-wrap; text-shadow:0 0 8px rgba(51,255,102,.55); }
+  .amber { color:#ffb347; text-shadow:0 0 8px rgba(255,179,71,.5); }
+  .dim { color:#1d8c3f; }
+  .cursor::after { content:"█"; animation:cb .8s steps(1) infinite; }
+  @keyframes cb { 50% { opacity:0; } }
+</style>
+</head>
+<body>
+  <div class="crt">
+    <div class="sweep"></div>
+    <pre id="out"></pre><span class="cursor" style="position:relative;z-index:1"></span>
+  </div>
+<script>
+  var LOGO =
+"  __  __    _    ____    ____  _____ ____  __     __\n"+
+" |  \\/  |  / \\  / ___|  / ___|| ____|  _ \\ \\ \\   / /\n"+
+" | |\\/| | / _ \\ \\___ \\  \\___ \\|  _| | |_) | \\ \\ / / \n"+
+" | |  | |/ ___ \\ ___) |  ___) | |___|  _ <   \\ V /  \n"+
+" |_|  |_/_/   \\_\\____/  |____/|_____|_| \\_\\   \\_/   \n";
+  var LINES = [
+    [LOGO,0],
+    ["BOOT-BIOS v2.4 ... OK",300],
+    ["memory test ......... 64K OK",250],
+    ["disk check .......... OK",250],
+    ["network unit ........ <span class='amber'>NO RESPONSE</span>",500],
+    ["",100],
+    ["<span class='amber'>!! SYSTEM UNDER BRIEF MAINTENANCE !!</span>",400],
+    ["",100],
+    ["The server will be back within minutes.",200],
+    ["This screen retries automatically until we reconnect.",200],
+    ["",200],
+    ["retrying in: <span id='cnt'>30</span> s",100]
+  ];
+  var out=document.getElementById("out");
+  function boot(){
+    out.innerHTML="";
+    var i=0;
+    function step(){
+      if(i>=LINES.length){ startCount(); return; }
+      out.innerHTML += LINES[i][0] + "\n";
+      setTimeout(step, LINES[i][1]); i++;
+    }
+    step();
+  }
+  var s=30, cd=null;
+  function startCount(){
+    if(cd)clearInterval(cd); s=30;
+    cd=setInterval(function(){
+      s--; var el=document.getElementById("cnt");
+      if(el)el.textContent=s;
+      if(s<=0){ location.reload(); }
+    },1000);
+  }
+  boot();
+</script>
+</body>
+</html>
